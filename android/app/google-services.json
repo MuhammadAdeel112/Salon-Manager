@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "622393954012",
+    "project_id": "barber-barber-ef5aa",
+    "storage_bucket": "barber-barber-ef5aa.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:622393954012:android:db7247371e17912c4c6e19",
+        "android_client_info": {
+          "package_name": "com.example.salon_manager"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB1L7PLS0iPLXLbivbVmCR9Pw7cXUzWi2A"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
