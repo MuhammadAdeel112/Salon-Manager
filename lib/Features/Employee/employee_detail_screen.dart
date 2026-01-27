@@ -1,19 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:intl/intl.dart';
 
 class EmployeeDetailsScreen extends StatelessWidget {
   final String staffName;
   final String dateFilter;
+  final String filterType;
+  final DateTimeRange? customRange; // Dashboard se selected range lene ke liye
 
   const EmployeeDetailsScreen({
     super.key,
     required this.staffName,
     required this.dateFilter,
+    required this.filterType,
+    this.customRange,
   });
 
-  // FIX: Status must match exactly what Admin Dashboard is looking for ("Approved" vs "Unapproved")
+  // Action Logic: Click par Approved/Unapproved toggle
   void _toggleStatus(String docId, String currentStatus) async {
-    // Dashboard logic ke mutabiq "Unapproved" rakhen taake mismatch na ho
     String newStatus = (currentStatus == "Approved") ? "Unapproved" : "Approved";
     await FirebaseFirestore.instance
         .collection('transactions')
@@ -30,7 +34,12 @@ class EmployeeDetailsScreen extends StatelessWidget {
           children: [
             Text(staffName.toUpperCase(),
                 style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black)),
-            Text(dateFilter, style: const TextStyle(fontSize: 11, color: Colors.grey)),
+            Text(
+              filterType == "Custom" && customRange != null
+                  ? "${DateFormat('dd MMM').format(customRange!.start)} - ${DateFormat('dd MMM').format(customRange!.end)}"
+                  : (filterType == "Daily" ? dateFilter : "Month: $dateFilter"),
+              style: const TextStyle(fontSize: 11, color: Colors.grey),
+            ),
           ],
         ),
         centerTitle: true,
@@ -42,12 +51,31 @@ class EmployeeDetailsScreen extends StatelessWidget {
         stream: FirebaseFirestore.instance
             .collection('transactions')
             .where('staffName', isEqualTo: staffName)
-            .where('dateOnly', isEqualTo: dateFilter)
             .snapshots(),
         builder: (context, snapshot) {
           if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
 
-          var docs = snapshot.data!.docs;
+          // Filtering logic: Range aur Single date dono handle honge
+          var docs = snapshot.data!.docs.where((doc) {
+            String docDateStr = doc['dateOnly'] ?? "";
+
+            if (filterType == "Daily") {
+              return docDateStr == dateFilter;
+            } else if (filterType == "Monthly") {
+              return docDateStr.startsWith(dateFilter);
+            } else if (filterType == "Custom" && customRange != null) {
+              try {
+                DateTime dt = DateTime.parse(docDateStr);
+                // Check if date is within range
+                return dt.isAfter(customRange!.start.subtract(const Duration(days: 1))) &&
+                    dt.isBefore(customRange!.end.add(const Duration(days: 1)));
+              } catch (e) {
+                return false;
+              }
+            }
+            return false;
+          }).toList();
+
           if (docs.isEmpty) return const Center(child: Text("No records found."));
 
           return ListView.builder(
@@ -55,7 +83,6 @@ class EmployeeDetailsScreen extends StatelessWidget {
             itemCount: docs.length,
             itemBuilder: (context, index) {
               var data = docs[index].data() as Map<String, dynamic>;
-              // Default value "Unapproved" rakhen
               String status = data['status'] ?? "Unapproved";
               bool isApproved = status == "Approved";
 
@@ -78,12 +105,10 @@ class EmployeeDetailsScreen extends StatelessWidget {
                   borderRadius: BorderRadius.circular(12),
                   child: Table(
                     border: TableBorder.all(color: Colors.grey.shade200, width: 1),
-                    columnWidths: const {
-                      0: FlexColumnWidth(1),
-                      1: FlexColumnWidth(2),
-                    },
+                    columnWidths: const {0: FlexColumnWidth(1), 1: FlexColumnWidth(2)},
                     children: [
-                      _tableRow("Time", data['time'] ?? "N/A"),
+                      // Updated: Time ke sath Date bhi dikhayega taake Monthly/Custom mein asani ho
+                      _tableRow("Date & Time", "${data['dateOnly'] ?? ''} | ${data['time'] ?? 'N/A'}"),
                       TableRow(
                         children: [
                           _cellTitle("Service & Price"),
@@ -119,7 +144,7 @@ class EmployeeDetailsScreen extends StatelessWidget {
                                   border: Border.all(color: isApproved ? Colors.green : Colors.red),
                                 ),
                                 child: Text(
-                                  isApproved ? "Approved" : "Unapproved (Click to Approve)",
+                                  isApproved ? "Approved" : "Unapproved (Approve)",
                                   textAlign: TextAlign.center,
                                   style: TextStyle(
                                     fontSize: 11,

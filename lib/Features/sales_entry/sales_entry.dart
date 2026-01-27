@@ -43,6 +43,14 @@ class _StaffEntryScreenState extends State<StaffEntryScreen> {
       initialDate: _selectedDate,
       firstDate: DateTime(2024),
       lastDate: DateTime.now(),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.light(primary: Colors.indigo, onPrimary: Colors.white, onSurface: Colors.black),
+          ),
+          child: child!,
+        );
+      },
     );
     if (picked != null && picked != _selectedDate) setState(() => _selectedDate = picked);
   }
@@ -52,7 +60,7 @@ class _StaffEntryScreenState extends State<StaffEntryScreen> {
   void _submitData() async {
     if (_selectedStaff == null || _selectedServicesList.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Select Staff and at least one Service")),
+        const SnackBar(content: Text("Select Staff and at least one Service"), behavior: SnackBarBehavior.floating),
       );
       return;
     }
@@ -65,6 +73,7 @@ class _StaffEntryScreenState extends State<StaffEntryScreen> {
         'status': "Unapproved",
         'timestamp': Timestamp.fromDate(_selectedDate),
         'dateOnly': DateFormat('yyyy-MM-dd').format(_selectedDate),
+        'time': DateFormat('hh:mm a').format(DateTime.now()), // Time add kiya asaan filter ke liye
       });
 
       setState(() {
@@ -74,184 +83,139 @@ class _StaffEntryScreenState extends State<StaffEntryScreen> {
       });
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Entry Saved Successfully"), backgroundColor: Colors.green),
+        const SnackBar(content: Text("Entry Saved Successfully"), backgroundColor: Colors.green, behavior: SnackBarBehavior.floating),
       );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Error: $e"), backgroundColor: Colors.red),
+        SnackBar(content: Text("Error: $e"), backgroundColor: Colors.red, behavior: SnackBarBehavior.floating),
       );
-    }
-  }
-
-  void _showOtherServiceModal() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Row(
-          children: [
-            const Icon(Icons.stars, color: Colors.indigo), // Changed to Indigo
-            const SizedBox(width: 10),
-            const Text("Custom Work", style: TextStyle(fontWeight: FontWeight.bold)),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: _otherServiceNameController,
-              decoration: InputDecoration(
-                labelText: "Work Name",
-                prefixIcon: const Icon(Icons.edit, color: Colors.indigo),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-              ),
-            ),
-            const SizedBox(height: 15),
-            TextField(
-              controller: _otherServicePriceController,
-              keyboardType: TextInputType.number,
-              decoration: InputDecoration(
-                labelText: "Price",
-                prefixText: "PKR ",
-                prefixIcon: const Icon(Icons.payments, color: Colors.green),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              setState(() => _currentService = null);
-            },
-            child: Text("CANCEL", style: TextStyle(color: Colors.grey[600])),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.indigo, // Changed to Indigo
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-            ),
-            onPressed: () {
-              if (_otherServiceNameController.text.isNotEmpty && _otherServicePriceController.text.isNotEmpty) {
-                setState(() {
-                  _selectedServicesList.add({
-                    "name": _otherServiceNameController.text.trim(),
-                    "price": double.parse(_otherServicePriceController.text),
-                  });
-                  _currentService = null;
-                  _otherServiceNameController.clear();
-                  _otherServicePriceController.clear();
-                });
-                Navigator.pop(context);
-              }
-            },
-            child: const Text("ADD TO LIST", style: TextStyle(color: Colors.white)),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _addServiceToList() {
-    if (_currentService == "Other") {
-      _showOtherServiceModal();
-    } else if (_currentService != null) {
-      setState(() {
-        _selectedServicesList.add({
-          "name": _currentService,
-          "price": _servicePrices[_currentService],
-        });
-        _currentService = null;
-      });
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[50], // Dashboard Background
+      backgroundColor: const Color(0xFFF8F9FA),
       appBar: AppBar(
-        title: const Text("Staff Entry",
-            style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+        title: const Text("New Staff Entry", style: TextStyle(fontWeight: FontWeight.w800, color: Colors.black, fontSize: 18)),
         backgroundColor: Colors.white,
         elevation: 0.5,
         centerTitle: true,
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildSectionTitle("1. Select Date"),
-            _buildDateSelector(),
-            _buildSectionTitle("2. Select Staff"),
-            _buildStaffDropdown(),
-            _buildSectionTitle("3. Add Services"),
-            _buildServiceSelector(),
-            _buildSelectedServicesChips(),
-            _buildTotalAmountDisplay(),
+            // STEP 1: Date & Staff
+            Row(
+              children: [
+                Expanded(child: _buildSectionTitle("Select Date")),
+                Expanded(child: _buildSectionTitle("Select Staff")),
+              ],
+            ),
+            Row(
+              children: [
+                Expanded(child: _buildDateSelector()),
+                const SizedBox(width: 12),
+                Expanded(child: _buildStaffDropdown()),
+              ],
+            ),
 
             const SizedBox(height: 20),
+            _buildSectionTitle("Select Services"),
+            _buildServiceSelector(),
+
+            _buildSelectedServicesChips(),
+
+            if (_selectedServicesList.isNotEmpty) _buildTotalAmountDisplay(),
+
+            const SizedBox(height: 30),
+
+            // ACTION BUTTONS
             SizedBox(
               width: double.infinity,
-              height: 55,
+              height: 58,
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.black, // Dark/Black theme for Primary Button
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-                    elevation: 0
+                  backgroundColor: Colors.black,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  elevation: 4,
+                  shadowColor: Colors.black.withOpacity(0.3),
                 ),
                 onPressed: _submitData,
-                child: const Text("Save Full Transaction",
-                    style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+                child: const Text("SAVE TRANSACTION", style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 1)),
               ),
             ),
-            const SizedBox(height: 12),
-            OutlinedButton.icon(
-              style: OutlinedButton.styleFrom(
-                  minimumSize: const Size(double.infinity, 50),
-                  side: const BorderSide(color: Colors.redAccent),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15))
+
+            const SizedBox(height: 16),
+
+            SizedBox(
+              width: double.infinity,
+              height: 54,
+              child: OutlinedButton.icon(
+                style: OutlinedButton.styleFrom(
+                  side: const BorderSide(color: Colors.redAccent, width: 1.5),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                ),
+                onPressed: () => _showExpenseModal(context),
+                icon: const Icon(Icons.receipt_long_rounded, color: Colors.redAccent),
+                label: const Text("ADD SHOP EXPENSE", style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold)),
               ),
-              onPressed: () => _showExpenseModal(context),
-              icon: const Icon(Icons.remove_circle_outline, color: Colors.redAccent),
-              label: const Text("ADD SHOP EXPENSE (KHARCHA)",
-                  style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold)),
             ),
-            const SizedBox(height: 30),
-            _buildSectionTitle("Recent History"),
+
+            const SizedBox(height: 35),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                _buildSectionTitle("Recent History"),
+                const Text("Last 5 entries", style: TextStyle(fontSize: 10, color: Colors.grey)),
+              ],
+            ),
             _buildRecentTransactions(),
+            const SizedBox(height: 20),
           ],
         ),
       ),
     );
   }
 
+  // --- UI COMPONENTS ---
+
   Widget _buildSectionTitle(String title) => Padding(
-      padding: const EdgeInsets.only(top: 15, bottom: 8),
-      child: Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Colors.black87)));
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.black54, letterSpacing: 0.5)));
 
   Widget _buildDateSelector() {
     return InkWell(
       onTap: () => _selectDate(context),
-      child: _buildSelectionCard(icon: Icons.calendar_month, child: Padding(padding: const EdgeInsets.symmetric(vertical: 15), child: Text(DateFormat('dd MMMM, yyyy').format(_selectedDate), style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.indigo)))),
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(14), border: Border.all(color: Colors.grey.shade200)),
+        child: Row(children: [
+          const Icon(Icons.calendar_today_rounded, color: Colors.indigo, size: 18),
+          const SizedBox(width: 10),
+          Text(DateFormat('dd MMM').format(_selectedDate), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+        ]),
+      ),
     );
   }
 
   Widget _buildStaffDropdown() {
-    return _buildSelectionCard(
-      icon: Icons.person,
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14),
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(14), border: Border.all(color: Colors.grey.shade200)),
       child: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance.collection('employees').where('status', isEqualTo: 'Active').snapshots(),
         builder: (context, snapshot) {
-          if (!snapshot.hasData) return const Text("Loading...");
-          return DropdownButtonFormField<String>(
-            value: _selectedStaff,
-            hint: const Text("Choose Staff"),
-            decoration: const InputDecoration(border: InputBorder.none),
-            items: snapshot.data!.docs.map((s) => DropdownMenuItem(value: s['name'].toString(), child: Text(s['name']))).toList(),
-            onChanged: (val) => setState(() => _selectedStaff = val),
+          return DropdownButtonHideUnderline(
+            child: DropdownButton<String>(
+              isExpanded: true,
+              value: _selectedStaff,
+              hint: const Text("Staff", style: TextStyle(fontSize: 14)),
+              items: snapshot.data?.docs.map((s) => DropdownMenuItem(value: s['name'].toString(), child: Text(s['name'], style: const TextStyle(fontSize: 14)))).toList() ?? [],
+              onChanged: (val) => setState(() => _selectedStaff = val),
+            ),
           );
         },
       ),
@@ -259,76 +223,136 @@ class _StaffEntryScreenState extends State<StaffEntryScreen> {
   }
 
   Widget _buildServiceSelector() {
-    return Row(children: [
-      Expanded(child: _buildSelectionCard(icon: Icons.content_cut, child: DropdownButton<String>(
-          isExpanded: true,
-          value: _currentService,
-          hint: const Text("Pick Service"),
-          underline: const SizedBox(),
-          items: _servicePrices.keys.map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
-          onChanged: (val) {
-            setState(() => _currentService = val);
-            if (val == "Other") _showOtherServiceModal();
-          }
-      ))),
-      const SizedBox(width: 8),
-      IconButton(
-          icon: const Icon(Icons.add_circle, color: Colors.indigo, size: 45),
-          onPressed: _addServiceToList
-      ),
-    ]);
+    return Row(
+      children: [
+        Expanded(
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14),
+            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(14), border: Border.all(color: Colors.grey.shade200)),
+            child: DropdownButtonHideUnderline(
+              child: DropdownButton<String>(
+                isExpanded: true,
+                value: _currentService,
+                hint: const Text("Pick a Service"),
+                items: _servicePrices.keys.map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
+                onChanged: (val) {
+                  setState(() => _currentService = val);
+                  if (val == "Other") _showOtherServiceModal();
+                },
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(width: 10),
+        GestureDetector(
+          onTap: _addServiceToList,
+          child: Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(color: Colors.indigo, borderRadius: BorderRadius.circular(14)),
+            child: const Icon(Icons.add_rounded, color: Colors.white, size: 30),
+          ),
+        ),
+      ],
+    );
   }
 
   Widget _buildSelectedServicesChips() {
     return Padding(
-      padding: const EdgeInsets.only(top: 8.0),
-      child: Wrap(spacing: 8, children: _selectedServicesList.map((s) => Chip(
-          backgroundColor: Colors.indigo.withOpacity(0.05),
-          side: BorderSide(color: Colors.indigo.withOpacity(0.1)),
-          label: Text("${s['name']} (Rs.${s['price']})", style: const TextStyle(color: Colors.indigo, fontSize: 12)),
+      padding: const EdgeInsets.only(top: 12),
+      child: Wrap(
+        spacing: 8,
+        runSpacing: 8,
+        children: _selectedServicesList.map((s) => Chip(
+          backgroundColor: Colors.indigo.withOpacity(0.08),
+          side: BorderSide.none,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          label: Text("${s['name']} - Rs ${s['price']}", style: const TextStyle(color: Colors.indigo, fontSize: 12, fontWeight: FontWeight.w600)),
           onDeleted: () => setState(() => _selectedServicesList.remove(s)),
-          deleteIconColor: Colors.redAccent)).toList()),
+          deleteIcon: const Icon(Icons.cancel, size: 16, color: Colors.indigo),
+        )).toList(),
+      ),
     );
   }
 
   Widget _buildTotalAmountDisplay() {
-    if (_selectedServicesList.isEmpty) return const SizedBox();
-    return Padding(padding: const EdgeInsets.symmetric(vertical: 20), child: Center(child: Column(children: [const Text("Total Amount", style: TextStyle(color: Colors.grey, fontSize: 12)), Text("PKR $_totalAmount", style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.black))])));
-  }
-
-  Widget _buildSelectionCard({required IconData icon, required Widget child}) {
     return Container(
-        margin: const EdgeInsets.only(bottom: 10),
-        padding: const EdgeInsets.symmetric(horizontal: 12),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.grey.shade200),
-        ),
-        child: Row(children: [Icon(icon, color: Colors.indigo, size: 20), const SizedBox(width: 12), Expanded(child: child)]));
+      margin: const EdgeInsets.only(top: 25),
+      padding: const EdgeInsets.all(20),
+      width: double.infinity,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(colors: [Colors.indigo.shade700, Colors.indigo.shade500]),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [BoxShadow(color: Colors.indigo.withOpacity(0.3), blurRadius: 10, offset: const Offset(0, 5))],
+      ),
+      child: Column(
+        children: [
+          const Text("Total Bill Amount", style: TextStyle(color: Colors.white70, fontSize: 12)),
+          const SizedBox(height: 5),
+          Text("PKR ${_totalAmount.toStringAsFixed(0)}", style: const TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.w900, letterSpacing: 1)),
+        ],
+      ),
+    );
   }
 
   Widget _buildRecentTransactions() {
     return StreamBuilder<QuerySnapshot>(
       stream: FirebaseFirestore.instance.collection('transactions').orderBy('timestamp', descending: true).limit(5).snapshots(),
       builder: (context, snapshot) {
-        if (!snapshot.hasData) return const LinearProgressIndicator();
-        return ListView.builder(shrinkWrap: true, physics: const NeverScrollableScrollPhysics(), itemCount: snapshot.data!.docs.length, itemBuilder: (context, index) {
-          var data = snapshot.data!.docs[index].data() as Map<String, dynamic>;
-          return Container(
-              margin: const EdgeInsets.only(bottom: 8),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.grey.shade100),
-              ),
+        if (!snapshot.hasData) return const Center(child: LinearProgressIndicator());
+        return Column(
+          children: snapshot.data!.docs.map((doc) {
+            var data = doc.data() as Map<String, dynamic>;
+            return Container(
+              margin: const EdgeInsets.only(bottom: 10),
+              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.grey.shade100)),
               child: ListTile(
-                  leading: const CircleAvatar(backgroundColor: Color(0xFFF5F6F9), child: Icon(Icons.person, color: Colors.indigo, size: 20)),
-                  title: Text(data['staffName'] ?? 'Unknown', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                  subtitle: Text(data['dateOnly'] ?? "", style: const TextStyle(fontSize: 11)),
-                  trailing: Text("Rs ${data['totalPrice']}", style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.green, fontSize: 14))));
-        });
+                dense: true,
+                leading: CircleAvatar(backgroundColor: Colors.grey.shade100, child: const Icon(Icons.person_outline, size: 18, color: Colors.indigo)),
+                title: Text(data['staffName'] ?? 'Unknown', style: const TextStyle(fontWeight: FontWeight.bold)),
+                subtitle: Text(data['dateOnly'] ?? "", style: const TextStyle(fontSize: 10)),
+                trailing: Text("Rs ${data['totalPrice']}", style: const TextStyle(fontWeight: FontWeight.w900, color: Colors.green)),
+              ),
+            );
+          }).toList(),
+        );
       },
+    );
+  }
+
+  // --- MODALS (Other Service & Expense) ---
+
+  void _showOtherServiceModal() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text("Custom Work", style: TextStyle(fontWeight: FontWeight.bold)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(controller: _otherServiceNameController, decoration: _inputDeco("Work Name", Icons.edit)),
+            const SizedBox(height: 12),
+            TextField(controller: _otherServicePriceController, keyboardType: TextInputType.number, decoration: _inputDeco("Price", Icons.payments)),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancel")),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.indigo, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
+            onPressed: () {
+              if (_otherServiceNameController.text.isNotEmpty && _otherServicePriceController.text.isNotEmpty) {
+                setState(() {
+                  _selectedServicesList.add({"name": _otherServiceNameController.text.trim(), "price": double.parse(_otherServicePriceController.text)});
+                  _currentService = null;
+                  _otherServiceNameController.clear(); _otherServicePriceController.clear();
+                });
+                Navigator.pop(context);
+              }
+            },
+            child: const Text("ADD SERVICE", style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
     );
   }
 
@@ -338,26 +362,26 @@ class _StaffEntryScreenState extends State<StaffEntryScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-      builder: (context) => Padding(
-        padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom + 20, top: 20, left: 20, right: 20),
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        decoration: const BoxDecoration(color: Colors.white, borderRadius: BorderRadius.vertical(top: Radius.circular(25))),
+        padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom + 20, top: 20, left: 24, right: 24),
         child: Column(
           mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Center(child: SizedBox(width: 40, child: Divider(thickness: 4))),
-            const SizedBox(height: 15),
+            Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(10))),
+            const SizedBox(height: 20),
             const Text("Shop Expense (Kharcha)", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.redAccent)),
-            const SizedBox(height: 20),
-            TextField(controller: amountController, keyboardType: TextInputType.number, decoration: InputDecoration(labelText: "Amount", prefixText: "PKR ", border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)))),
+            const SizedBox(height: 25),
+            TextField(controller: amountController, keyboardType: TextInputType.number, decoration: _inputDeco("Amount (PKR)", Icons.money_off)),
             const SizedBox(height: 15),
-            TextField(controller: noteController, decoration: InputDecoration(labelText: "Detail", border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)))),
-            const SizedBox(height: 20),
+            TextField(controller: noteController, decoration: _inputDeco("Detail / Note", Icons.note_add)),
+            const SizedBox(height: 25),
             SizedBox(
                 width: double.infinity,
-                height: 50,
+                height: 55,
                 child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+                    style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15))),
                     onPressed: () async {
                       if (amountController.text.isNotEmpty) {
                         await FirebaseFirestore.instance.collection('expenses').add({
@@ -376,5 +400,24 @@ class _StaffEntryScreenState extends State<StaffEntryScreen> {
         ),
       ),
     );
+  }
+
+  InputDecoration _inputDeco(String label, IconData icon) {
+    return InputDecoration(
+      labelText: label, prefixIcon: Icon(icon, size: 20),
+      filled: true, fillColor: Colors.grey.shade50,
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade200)),
+      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade200)),
+    );
+  }
+
+  void _addServiceToList() {
+    if (_currentService == "Other") { _showOtherServiceModal(); }
+    else if (_currentService != null) {
+      setState(() {
+        _selectedServicesList.add({"name": _currentService, "price": _servicePrices[_currentService]});
+        _currentService = null;
+      });
+    }
   }
 }

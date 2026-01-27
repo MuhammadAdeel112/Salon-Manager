@@ -3,8 +3,10 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
 import '../Auth/admin_login.dart';
+import '../Sales_inventory/manage_inventory.dart';
 import 'manage_employee.dart';
 import 'manage_services.dart';
+
 import '../../main.dart';
 
 class AdminDashboard extends StatefulWidget {
@@ -16,6 +18,7 @@ class AdminDashboard extends StatefulWidget {
 
 class _AdminDashboardState extends State<AdminDashboard> {
   String selectedFilter = "Daily";
+  DateTimeRange? customRange;
 
   void _handleLogout() async {
     await FirebaseAuth.instance.signOut();
@@ -24,6 +27,29 @@ class _AdminDashboardState extends State<AdminDashboard> {
         MaterialPageRoute(builder: (context) => const SalonApp()),
             (route) => false,
       );
+    }
+  }
+
+  Future<void> _pickCustomRange() async {
+    DateTimeRange? picked = await showDateRangePicker(
+      context: context,
+      firstDate: DateTime(2023),
+      lastDate: DateTime.now(),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.light(primary: Colors.black, onPrimary: Colors.white, onSurface: Colors.black),
+          ),
+          child: child!,
+        );
+      },
+    );
+
+    if (picked != null) {
+      setState(() {
+        customRange = picked;
+        selectedFilter = "Custom";
+      });
     }
   }
 
@@ -38,17 +64,9 @@ class _AdminDashboardState extends State<AdminDashboard> {
     return Scaffold(
       backgroundColor: Colors.grey[50],
       appBar: AppBar(
-        title: const Text("Admin Dashboard",
-            style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
-        backgroundColor: Colors.white,
-        elevation: 0.5,
-        centerTitle: true,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout, color: Colors.redAccent),
-            onPressed: () => _showLogoutDialog(),
-          )
-        ],
+        title: const Text("Admin Dashboard", style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+        backgroundColor: Colors.white, elevation: 0.5, centerTitle: true,
+        actions: [IconButton(icon: const Icon(Icons.logout, color: Colors.redAccent), onPressed: () => _showLogoutDialog())],
       ),
       body: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance.collection('transactions').snapshots(),
@@ -56,32 +74,33 @@ class _AdminDashboardState extends State<AdminDashboard> {
           return StreamBuilder<QuerySnapshot>(
             stream: FirebaseFirestore.instance.collection('expenses').snapshots(),
             builder: (context, expSnapshot) {
-              if (salesSnapshot.connectionState == ConnectionState.waiting) {
-                return const Center(child: CircularProgressIndicator());
-              }
+              if (salesSnapshot.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator());
 
               double totalSalesOverview = 0;
               double totalExpenses = 0;
 
+              bool checkInclusion(String docDate) {
+                if (selectedFilter == "Daily") return docDate == todayDate;
+                if (selectedFilter == "Monthly") return docDate.startsWith(currentMonth);
+                if (selectedFilter == "Custom" && customRange != null) {
+                  try {
+                    DateTime dt = DateTime.parse(docDate);
+                    return dt.isAfter(customRange!.start.subtract(const Duration(days: 1))) &&
+                        dt.isBefore(customRange!.end.add(const Duration(days: 1)));
+                  } catch (e) { return false; }
+                }
+                return false;
+              }
+
               for (var doc in salesSnapshot.data?.docs ?? []) {
                 var data = doc.data() as Map<String, dynamic>;
-                String docDate = data['dateOnly'] ?? "";
-                bool shouldInclude = (selectedFilter == "Daily")
-                    ? (docDate == todayDate)
-                    : (docDate.startsWith(currentMonth));
-                if (shouldInclude) totalSalesOverview += (data['totalPrice'] ?? 0).toDouble();
+                if (checkInclusion(data['dateOnly'] ?? "")) totalSalesOverview += (data['totalPrice'] ?? 0).toDouble();
               }
 
               for (var doc in expSnapshot.data?.docs ?? []) {
                 var data = doc.data() as Map<String, dynamic>;
-                String docDate = data['dateOnly'] ?? "";
-                bool shouldInclude = (selectedFilter == "Daily")
-                    ? (docDate == todayDate)
-                    : (docDate.startsWith(currentMonth));
-                if (shouldInclude) totalExpenses += (data['amount'] ?? 0).toDouble();
+                if (checkInclusion(data['dateOnly'] ?? "")) totalExpenses += (data['amount'] ?? 0).toDouble();
               }
-
-              double netProfit = totalSalesOverview - totalExpenses;
 
               return SingleChildScrollView(
                 padding: const EdgeInsets.all(16),
@@ -94,11 +113,17 @@ class _AdminDashboardState extends State<AdminDashboard> {
                         _filterButton("Daily"),
                         const SizedBox(width: 10),
                         _filterButton("Monthly"),
+                        const SizedBox(width: 10),
+                        _filterButton("Custom"),
                       ],
                     ),
                     const SizedBox(height: 20),
-                    Text("$selectedFilter Overview",
-                        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                    Text(
+                      selectedFilter == "Custom" && customRange != null
+                          ? "Range: ${DateFormat('dd MMM').format(customRange!.start)} - ${DateFormat('dd MMM').format(customRange!.end)}"
+                          : "$selectedFilter Overview",
+                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    ),
                     const SizedBox(height: 12),
                     Row(
                       children: [
@@ -106,28 +131,29 @@ class _AdminDashboardState extends State<AdminDashboard> {
                         const SizedBox(width: 8),
                         _buildStatCard("Expenses", totalExpenses, Colors.red),
                         const SizedBox(width: 8),
-                        _buildStatCard("Net Profit", netProfit, Colors.blue),
+                        _buildStatCard("Net Profit", totalSalesOverview - totalExpenses, Colors.blue),
                       ],
                     ),
                     const SizedBox(height: 24),
-                    const Text("Admin Management",
-                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                    const Text("Admin Management", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                     const SizedBox(height: 12),
                     GridView.count(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      crossAxisCount: 3,
-                      crossAxisSpacing: 10,
-                      mainAxisSpacing: 10,
-                      childAspectRatio: isTablet ? 1.5 : 0.85,
+                      shrinkWrap: true, physics: const NeverScrollableScrollPhysics(),
+                      crossAxisCount: 3, crossAxisSpacing: 10, mainAxisSpacing: 10, childAspectRatio: isTablet ? 1.5 : 0.85,
                       children: [
                         _buildAdminMenuCard(context, "Staff", Icons.people_alt_rounded, Colors.indigo, const ManageEmployees()),
                         _buildAdminMenuCard(context, "Services", Icons.cut_rounded, const Color.fromARGB(255, 14, 126, 116), const ManageServices()),
-                        _buildAdminMenuCard(context, "Expenses", Icons.receipt_long, Colors.redAccent, ExpenseHistoryScreen(filterType: selectedFilter, todayDate: todayDate, currentMonth: currentMonth)),
+                        _buildAdminMenuCard(context, "Expenses", Icons.receipt_long, Colors.redAccent, ExpenseHistoryScreen(filterType: selectedFilter, todayDate: todayDate, currentMonth: currentMonth, customRange: customRange)),
                       ],
                     ),
+
+                    const SizedBox(height: 12),
+
+                    // --- INVENTORY FULL WIDTH BOX ---
+                    _buildInventoryBox(context),
+
                     const SizedBox(height: 24),
-                    _sectionWrapper("Employee Performance", _buildEmployeeTable(todayDate, currentMonth)),
+                    _sectionWrapper("Employee Performance", _buildEmployeeTable(todayDate, currentMonth, checkInclusion)),
                     const SizedBox(height: 40),
                   ],
                 ),
@@ -139,40 +165,54 @@ class _AdminDashboardState extends State<AdminDashboard> {
     );
   }
 
-  // --- UI HELPERS ---
-
-  Widget _buildAdminMenuCard(BuildContext context, String title, IconData icon, Color color, Widget nextScreen) {
+  Widget _buildInventoryBox(BuildContext context) {
     return InkWell(
-      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => nextScreen)),
+      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const ManageInventoryScreen())),
       child: Container(
-        decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(15), border: Border.all(color: color.withOpacity(0.3))),
-        child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(icon, color: color, size: 28), const SizedBox(height: 8), Text(title, textAlign: TextAlign.center, style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 12))]),
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(15),
+          border: Border.all(color: Colors.grey.shade200),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(color: Colors.purple.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
+              child: const Icon(Icons.inventory_2_rounded, color: Colors.purple, size: 28),
+            ),
+            const SizedBox(width: 15),
+            const Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text("Inventory / Stock Management", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                  Text("Manage products and track usage", style: TextStyle(color: Colors.grey, fontSize: 11)),
+                ],
+              ),
+            ),
+            const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: Colors.grey),
+          ],
+        ),
       ),
     );
-  }
-
-  Widget _sectionWrapper(String title, Widget child) {
-    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-      const SizedBox(height: 12),
-      child,
-    ]);
   }
 
   Widget _filterButton(String type) {
     bool isActive = selectedFilter == type;
     return ElevatedButton(
       style: ElevatedButton.styleFrom(backgroundColor: isActive ? Colors.black : Colors.grey[200], foregroundColor: isActive ? Colors.white : Colors.black, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)), elevation: 0),
-      onPressed: () => setState(() => selectedFilter = type),
+      onPressed: () {
+        if (type == "Custom") { _pickCustomRange(); }
+        else { setState(() { selectedFilter = type; customRange = null; }); }
+      },
       child: Text(type),
     );
   }
 
-  Widget _buildStatCard(String title, double value, Color color) {
-    return Expanded(child: Container(padding: const EdgeInsets.all(12), decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.grey.shade200)), child: Column(children: [Text(title, style: const TextStyle(fontSize: 10, color: Colors.grey)), const SizedBox(height: 8), FittedBox(child: Text("PKR ${value.toStringAsFixed(0)}", style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: color)))])));
-  }
-
-  Widget _buildEmployeeTable(String todayDate, String currentMonth) {
+  Widget _buildEmployeeTable(String todayDate, String currentMonth, bool Function(String) inclusionCheck) {
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.grey.shade200)),
@@ -198,26 +238,18 @@ class _AdminDashboardState extends State<AdminDashboard> {
               for (var doc in transSnapshot.data!.docs) {
                 var data = doc.data() as Map<String, dynamic>;
                 String docDate = data['dateOnly'] ?? "";
-                String status = (data['status'] ?? "Unapproved").toString().trim();
                 String staffClean = (data['staffName'] ?? "Unknown").toString().toLowerCase().trim();
-                double price = (data['totalPrice'] ?? 0).toDouble();
-                bool shouldInclude = (selectedFilter == "Daily") ? (docDate == todayDate) : (docDate.startsWith(currentMonth));
-                if (shouldInclude) {
-                  totalStaffRevenue[staffClean] = (totalStaffRevenue[staffClean] ?? 0) + price;
-                  if (status == "Approved" && staffTypes[staffClean] == "Commission") {
-                    double rate = staffRates[staffClean] ?? 0;
-                    approvedCommissionPKR[staffClean] = (approvedCommissionPKR[staffClean] ?? 0) + (price * rate / 100);
+                if (inclusionCheck(docDate)) {
+                  totalStaffRevenue[staffClean] = (totalStaffRevenue[staffClean] ?? 0) + (data['totalPrice'] ?? 0).toDouble();
+                  if ((data['status'] ?? "Unapproved") == "Approved" && staffTypes[staffClean] == "Commission") {
+                    approvedCommissionPKR[staffClean] = (approvedCommissionPKR[staffClean] ?? 0) + ((data['totalPrice'] ?? 0) * (staffRates[staffClean] ?? 0) / 100);
                   }
                 }
               }
 
               return DataTable(
                 columnSpacing: 10, horizontalMargin: 10,
-                columns: const [
-                  DataColumn(label: Text("Staff", style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold))),
-                  DataColumn(label: Text("Total Rev", style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold))),
-                  DataColumn(label: Text("Comm (PKR)", style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold))),
-                ],
+                columns: const [DataColumn(label: Text("Staff", style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold))), DataColumn(label: Text("Total Rev", style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold))), DataColumn(label: Text("Comm (PKR)", style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)))],
                 rows: empSnapshot.data!.docs.map((empDoc) {
                   var empData = empDoc.data() as Map<String, dynamic>;
                   String originalName = empData['name'] ?? "Unknown";
@@ -225,8 +257,9 @@ class _AdminDashboardState extends State<AdminDashboard> {
                     DataCell(InkWell(
                         onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => EmployeeDetailsScreen(
                           staffName: originalName,
-                          dateFilter: selectedFilter == "Daily" ? todayDate : currentMonth,
+                          dateFilter: selectedFilter == "Daily" ? todayDate : (selectedFilter == "Monthly" ? currentMonth : "Custom Range"),
                           filterType: selectedFilter,
+                          customRange: customRange,
                         ))),
                         child: Text(originalName, style: const TextStyle(fontSize: 11, color: Colors.blue, decoration: TextDecoration.underline)))),
                     DataCell(Text("Rs ${totalStaffRevenue[originalName.toLowerCase().trim()]?.toStringAsFixed(0) ?? '0'}", style: const TextStyle(fontSize: 11))),
@@ -244,15 +277,12 @@ class _AdminDashboardState extends State<AdminDashboard> {
     );
   }
 
-  void _showLogoutDialog() {
-    showDialog(context: context, builder: (context) => AlertDialog(
-      title: const Text("Logout"),
-      actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancel")),
-        TextButton(onPressed: () { Navigator.pop(context); _handleLogout(); }, child: const Text("Confirm", style: TextStyle(color: Colors.red))),
-      ],
-    ));
+  Widget _buildAdminMenuCard(BuildContext context, String title, IconData icon, Color color, Widget nextScreen) {
+    return InkWell(onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => nextScreen)), child: Container(decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(15), border: Border.all(color: color.withOpacity(0.3))), child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(icon, color: color, size: 28), const SizedBox(height: 8), Text(title, textAlign: TextAlign.center, style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 12))])));
   }
+  Widget _sectionWrapper(String title, Widget child) => Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)), const SizedBox(height: 12), child]);
+  Widget _buildStatCard(String title, double value, Color color) => Expanded(child: Container(padding: const EdgeInsets.all(12), decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.grey.shade200)), child: Column(children: [Text(title, style: const TextStyle(fontSize: 10, color: Colors.grey)), const SizedBox(height: 8), FittedBox(child: Text("PKR ${value.toStringAsFixed(0)}", style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: color)))])));
+  void _showLogoutDialog() { showDialog(context: context, builder: (context) => AlertDialog(title: const Text("Logout"), actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancel")), TextButton(onPressed: () { Navigator.pop(context); _handleLogout(); }, child: const Text("Confirm", style: TextStyle(color: Colors.red)))])); }
 }
 
 // -----------------------------------------------------------------
@@ -262,8 +292,9 @@ class ExpenseHistoryScreen extends StatelessWidget {
   final String filterType;
   final String todayDate;
   final String currentMonth;
+  final DateTimeRange? customRange;
 
-  const ExpenseHistoryScreen({super.key, required this.filterType, required this.todayDate, required this.currentMonth});
+  const ExpenseHistoryScreen({super.key, required this.filterType, required this.todayDate, required this.currentMonth, this.customRange});
 
   @override
   Widget build(BuildContext context) {
@@ -276,7 +307,13 @@ class ExpenseHistoryScreen extends StatelessWidget {
           if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
           var filteredDocs = snapshot.data!.docs.where((doc) {
             String docDate = doc['dateOnly'] ?? "";
-            return filterType == "Daily" ? docDate == todayDate : docDate.startsWith(currentMonth);
+            if (filterType == "Daily") return docDate == todayDate;
+            if (filterType == "Monthly") return docDate.startsWith(currentMonth);
+            if (filterType == "Custom" && customRange != null) {
+              DateTime dt = DateTime.parse(docDate);
+              return dt.isAfter(customRange!.start.subtract(const Duration(days: 1))) && dt.isBefore(customRange!.end.add(const Duration(days: 1)));
+            }
+            return false;
           }).toList();
           return ListView.builder(
             padding: const EdgeInsets.all(16),
@@ -293,14 +330,15 @@ class ExpenseHistoryScreen extends StatelessWidget {
 }
 
 // -----------------------------------------------------------------
-// EMPLOYEE DETAILS SCREEN (FIXED FOR MONTHLY)
+// EMPLOYEE DETAILS SCREEN
 // -----------------------------------------------------------------
 class EmployeeDetailsScreen extends StatelessWidget {
   final String staffName;
   final String dateFilter;
   final String filterType;
+  final DateTimeRange? customRange;
 
-  const EmployeeDetailsScreen({super.key, required this.staffName, required this.dateFilter, required this.filterType});
+  const EmployeeDetailsScreen({super.key, required this.staffName, required this.dateFilter, required this.filterType, this.customRange});
 
   void _toggleStatus(String docId, String currentStatus) async {
     String newStatus = (currentStatus == "Approved") ? "Unapproved" : "Approved";
@@ -314,7 +352,12 @@ class EmployeeDetailsScreen extends StatelessWidget {
       appBar: AppBar(
         title: Column(children: [
           Text(staffName.toUpperCase(), style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black)),
-          Text(filterType == "Daily" ? dateFilter : "Month: $dateFilter", style: const TextStyle(fontSize: 11, color: Colors.grey)),
+          Text(
+              filterType == "Custom" && customRange != null
+                  ? "${DateFormat('dd MMM').format(customRange!.start)} - ${DateFormat('dd MMM').format(customRange!.end)}"
+                  : (filterType == "Daily" ? dateFilter : "Month: $dateFilter"),
+              style: const TextStyle(fontSize: 11, color: Colors.grey)
+          ),
         ]),
         centerTitle: true, backgroundColor: Colors.white, elevation: 0.5, iconTheme: const IconThemeData(color: Colors.black),
       ),
@@ -323,10 +366,15 @@ class EmployeeDetailsScreen extends StatelessWidget {
         builder: (context, snapshot) {
           if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
 
-          // Filtering logic for Daily vs Monthly
           var docs = snapshot.data!.docs.where((doc) {
             String docDate = doc['dateOnly'] ?? "";
-            return filterType == "Daily" ? docDate == dateFilter : docDate.startsWith(dateFilter);
+            if (filterType == "Daily") return docDate == dateFilter;
+            if (filterType == "Monthly") return docDate.startsWith(dateFilter);
+            if (filterType == "Custom" && customRange != null) {
+              DateTime dt = DateTime.parse(docDate);
+              return dt.isAfter(customRange!.start.subtract(const Duration(days: 1))) && dt.isBefore(customRange!.end.add(const Duration(days: 1)));
+            }
+            return false;
           }).toList();
 
           if (docs.isEmpty) return const Center(child: Text("No records found."));
@@ -380,6 +428,5 @@ class EmployeeDetailsScreen extends StatelessWidget {
       ),
     );
   }
-
   Widget _cellTitle(String text) => Container(color: Colors.grey.shade50, padding: const EdgeInsets.all(12), child: Text(text, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.black54)));
 }
