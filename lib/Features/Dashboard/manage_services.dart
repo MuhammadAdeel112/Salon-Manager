@@ -4,12 +4,20 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 class ManageServices extends StatelessWidget {
   const ManageServices({super.key});
 
+  // --- GOLDEN PALETTE ---
+  final Color kBg = const Color(0xFFFFFDE7);
+  final Color kGoldLight = const Color(0xFFF3E5AB);
+  final Color kGoldPrimary = const Color(0xFFD4AF37);
+  final Color kGoldDark = const Color(0xFFC69C34);
+  final Color kCharcoal = const Color(0xFF2C2C2C);
+  final Color kWhite = Colors.white;
+
   void _confirmDelete(BuildContext context, String docId, String name) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-        title: const Text("Delete Service?"),
+        title: Text("Delete Service?", style: TextStyle(color: kCharcoal, fontWeight: FontWeight.bold)),
         content: Text("Are you sure you want to remove '$name'?"),
         actions: [
           TextButton(
@@ -22,7 +30,10 @@ class ManageServices extends StatelessWidget {
               await FirebaseFirestore.instance.collection('services').doc(docId).delete();
               Navigator.pop(context);
               ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text("$name deleted"), backgroundColor: Colors.red),
+                SnackBar(
+                  content: Text("$name deleted", style: const TextStyle(color: Colors.white)),
+                  backgroundColor: kCharcoal,
+                ),
               );
             },
             child: const Text("DELETE", style: TextStyle(color: Colors.white)),
@@ -38,32 +49,41 @@ class ManageServices extends StatelessWidget {
     final priceController = TextEditingController();
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FA), // Clean Background
+      backgroundColor: kBg,
       appBar: AppBar(
-        title: const Text("Service Management",
-            style: TextStyle(fontWeight: FontWeight.w800, color: Colors.black, fontSize: 18)),
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
+        title: Text("Service Management",
+            style: TextStyle(fontWeight: FontWeight.w800, color: kCharcoal, fontSize: 18)),
+        backgroundColor: kWhite,
+        foregroundColor: kCharcoal,
         elevation: 0.5,
         centerTitle: true,
       ),
       body: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance.collection('services').snapshots(),
         builder: (context, snapshot) {
-          if (!snapshot.hasData) return const Center(child: CircularProgressIndicator(color: Colors.black));
+          if (!snapshot.hasData) return Center(child: CircularProgressIndicator(color: kGoldDark));
 
           return ListView.builder(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
             itemCount: snapshot.data!.docs.length,
             itemBuilder: (context, index) {
-              var service = snapshot.data!.docs[index];
+              var doc = snapshot.data!.docs[index];
+
+              // --- FIX: SAFE DATA ACCESS ---
+              // Hum data ko Map mein convert kar rahe hain aur check kar rahe hain ke fields exist karti hain ya nahi
+              Map<String, dynamic>? data = doc.data() as Map<String, dynamic>?;
+
+              String sName = (data != null && data.containsKey('name')) ? data['name'] : "Unnamed Service";
+              String sStatus = (data != null && data.containsKey('status')) ? data['status'] : "Unknown";
+              String sPrice = (data != null && data.containsKey('price')) ? data['price'].toString() : "0";
+
               return Container(
                 margin: const EdgeInsets.only(bottom: 12),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: kWhite,
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: [
-                    BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4))
+                    BoxShadow(color: kGoldDark.withOpacity(0.08), blurRadius: 10, offset: const Offset(0, 4))
                   ],
                 ),
                 child: ListTile(
@@ -72,17 +92,17 @@ class ManageServices extends StatelessWidget {
                     width: 48,
                     height: 48,
                     decoration: BoxDecoration(
-                      color: Colors.teal.withOpacity(0.1),
+                      color: kGoldLight,
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: const Icon(Icons.auto_fix_high_rounded, color: Colors.teal, size: 24),
+                    child: Icon(Icons.auto_fix_high_rounded, color: kGoldDark, size: 24),
                   ),
-                  title: Text(service['name'],
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                  title: Text(sName,
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: kCharcoal)),
                   subtitle: Padding(
                     padding: const EdgeInsets.only(top: 4),
-                    child: Text("Status: ${service['status']}",
-                        style: TextStyle(fontSize: 12, color: Colors.teal.shade700, fontWeight: FontWeight.w500)),
+                    child: Text("Status: $sStatus",
+                        style: TextStyle(fontSize: 12, color: kGoldDark, fontWeight: FontWeight.w500)),
                   ),
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,
@@ -90,16 +110,16 @@ class ManageServices extends StatelessWidget {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                         decoration: BoxDecoration(
-                          color: Colors.black.withOpacity(0.05),
+                          color: kGoldPrimary.withOpacity(0.15),
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        child: Text("PKR ${service['price']}",
-                            style: const TextStyle(fontWeight: FontWeight.w800, color: Colors.black, fontSize: 13)),
+                        child: Text("PKR $sPrice",
+                            style: TextStyle(fontWeight: FontWeight.w800, color: kCharcoal, fontSize: 13)),
                       ),
                       const SizedBox(width: 4),
                       IconButton(
                         icon: const Icon(Icons.delete_outline_rounded, color: Colors.redAccent, size: 22),
-                        onPressed: () => _confirmDelete(context, service.id, service['name']),
+                        onPressed: () => _confirmDelete(context, doc.id, sName),
                       ),
                     ],
                   ),
@@ -110,11 +130,11 @@ class ManageServices extends StatelessWidget {
         },
       ),
       floatingActionButton: FloatingActionButton.extended(
-        backgroundColor: Colors.black,
+        backgroundColor: kCharcoal,
         onPressed: () => _showAddServiceDialog(context, nameController, priceController),
-        label: const Text("NEW SERVICE",
-            style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white, letterSpacing: 1)),
-        icon: const Icon(Icons.add, color: Colors.white),
+        label: Text("NEW SERVICE",
+            style: TextStyle(fontWeight: FontWeight.bold, color: kGoldPrimary, letterSpacing: 1)),
+        icon: Icon(Icons.add, color: kGoldPrimary),
       ),
     );
   }
@@ -124,7 +144,7 @@ class ManageServices extends StatelessWidget {
       context: context,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text("Add New Service", style: TextStyle(fontWeight: FontWeight.bold)),
+        title: Text("Add New Service", style: TextStyle(fontWeight: FontWeight.bold, color: kCharcoal)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -149,7 +169,7 @@ class ManageServices extends StatelessWidget {
             width: 120,
             child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.black,
+                  backgroundColor: kCharcoal,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                 ),
                 onPressed: () async {
@@ -164,7 +184,7 @@ class ManageServices extends StatelessWidget {
                     Navigator.pop(context);
                   }
                 },
-                child: const Text("ADD", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold))
+                child: Text("ADD", style: TextStyle(color: kGoldPrimary, fontWeight: FontWeight.bold))
             ),
           ),
         ],
@@ -175,7 +195,8 @@ class ManageServices extends StatelessWidget {
   InputDecoration _inputDecoration(String label, IconData icon) {
     return InputDecoration(
       labelText: label,
-      prefixIcon: Icon(icon, color: Colors.black54, size: 20),
+      labelStyle: TextStyle(color: kGoldDark),
+      prefixIcon: Icon(icon, color: kGoldDark, size: 20),
       filled: true,
       fillColor: const Color(0xFFF9F9F9),
       enabledBorder: OutlineInputBorder(
@@ -183,7 +204,7 @@ class ManageServices extends StatelessWidget {
           borderSide: BorderSide(color: Colors.grey.shade200)),
       focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Colors.black, width: 1.5)),
+          borderSide: BorderSide(color: kGoldPrimary, width: 1.5)),
     );
   }
 }

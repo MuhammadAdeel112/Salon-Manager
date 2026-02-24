@@ -15,9 +15,16 @@ dependencies:
 
   # Pehle se maujood stable versions
   intl: ^0.19.0
-  firebase_core: ^4.3.0  # Latest version check kar lein
-  firebase_auth: ^6.1.3  # Latest version check kar lein
+  firebase_core: ^4.3.0
+  firebase_auth: ^6.1.3
   cloud_firestore: ^6.1.1
+  image_picker: ^1.2.1
+
+  # State Management (Image flicker aur data handle karne ke liye)
+  provider: ^6.1.5+1
+
+  # Image flickering aur slow loading khatam karne ke liye naya package
+  cached_network_image: ^3.4.1
 
 dev_dependencies:
   flutter_test:
@@ -38,6 +45,10 @@ flutter_launcher_icons:
 flutter:
   uses-material-design: true
 
-  # Assets folder ko register karna taake app icon image ko parh sake
+  # Assets register yahan hote hain
   assets:
     - assets/icon.jpg.jpeg
+    - assets/logo.png
+    - assets/exp.png
+    - assets/emp.png
+    - assets/headlogo.jpeg

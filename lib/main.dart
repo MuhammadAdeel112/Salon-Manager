@@ -1,14 +1,31 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:provider/provider.dart'; // Naya import
+import 'package:salon_manager/Features/Dashboard/admin_provider.dart';
+import 'package:salon_manager/Features/Employee/view/employee_detail_provider.dart';
+import 'package:salon_manager/Features/sales_entry/entry_provider.dart';
 import 'Features/Auth/admin_login.dart';
-import 'Features/sales_entry/sales_entry.dart';
-import 'features/dashboard/admin_dashboard.dart';
+import 'Features/Dashboard/employee/staff_provider.dart';
+import 'Features/sales_entry/staff_entry.dart';
+ // Provider file ka sahi path den
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
-  runApp(const SalonApp());
+  runApp(
+    // Step 1: Poori App ko MultiProvider mein wrap kiya
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => EntryProvider()),
+        ChangeNotifierProvider(create: (_) => AdminProvider()),
+        ChangeNotifierProvider(create: (_) => EmployeeDetailsProvider()),
+        ChangeNotifierProvider(create: (_) => StaffProvider()),
+        ChangeNotifierProvider(create: (_) => EntryProvider()),
+      ],
+      child: const SalonApp(),
+    ),
+  );
 }
 
 class SalonApp extends StatelessWidget {
@@ -24,7 +41,6 @@ class SalonApp extends StatelessWidget {
         primaryColor: Colors.purple,
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.purple),
       ),
-      // Home ko hum simple Scaffold mein rakhenge
       home: const AuthWrapper(),
     );
   }
@@ -40,14 +56,12 @@ class AuthWrapper extends StatelessWidget {
       child: Scaffold(
         body: SafeArea(
           child: TabBarView(
-            physics: const NeverScrollableScrollPhysics(), // Swipe band kar diya taake login bypass na ho
+            physics: const NeverScrollableScrollPhysics(),
             children: [
-              // 1. Staff Entry Screen
-              StaffEntryScreen(),
+              // 1. Staff Entry Screen (Ab ye Provider use kar sakti hai)
+              const StaffEntryScreen(),
 
-              // 2. Admin Tab (Security Fix)
-              // StreamBuilder nikaal diya hai. Ab ye tab hamesha Login Page dikhayega.
-              // Jab user login kar lega, to Login Page khud usay Dashboard par bhej dega.
+              // 2. Admin Tab
               const AdminLoginPage(),
             ],
           ),
