@@ -4,10 +4,11 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:provider/provider.dart'; // Naya import
 import 'package:salon_manager/Features/Dashboard/admin_provider.dart';
 import 'package:salon_manager/Features/Employee/view/employee_detail_provider.dart';
-import 'package:salon_manager/Features/sales_entry/entry_provider.dart';
 import 'Features/Auth/admin_login.dart';
 import 'Features/Dashboard/employee/staff_provider.dart';
-import 'Features/sales_entry/staff_entry.dart';
+
+import 'Features/staff_entry/entry_provider.dart';
+import 'Features/staff_entry/staff_entry.dart';
  // Provider file ka sahi path den
 
 void main() async {
@@ -76,8 +77,8 @@ class AuthWrapper extends StatelessWidget {
             unselectedLabelColor: Colors.grey,
             indicatorColor: Colors.purple,
             tabs: [
-              Tab(icon: Icon(Icons.add_shopping_cart), text: "Staff Entry"),
-              Tab(icon: Icon(Icons.lock_person), text: "Admin Panel"),
+              Tab(icon: Icon(Icons.group_add), text: "Staff Entry"),
+              Tab(icon: Icon(Icons.admin_panel_settings), text: "Admin Panel"),
             ],
           ),
         ),

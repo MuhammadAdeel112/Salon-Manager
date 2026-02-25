@@ -181,7 +181,6 @@ class _StaffEntryScreenState extends State<StaffEntryScreen> {
       padding: const EdgeInsets.only(top: 60, left: 24, right: 24, bottom: 30),
       width: double.infinity,
       decoration: BoxDecoration(
-        // --- UPDATED: BOTTOM CORNERS ROUNDED LIKE THE SCREENSHOT ---
           borderRadius: const BorderRadius.only(
             bottomLeft: Radius.circular(35),
             bottomRight: Radius.circular(35),
@@ -347,11 +346,11 @@ class _StaffEntryScreenState extends State<StaffEntryScreen> {
 
   Widget _buildServiceSelectionArea(EntryProvider provider) {
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Text("1. ASSIGN STAFF", style: TextStyle(fontWeight: FontWeight.w900, fontSize: 11, color: kCharcoal.withOpacity(0.4))),
+      Text("1. ASSIGN STAFF", style: TextStyle(fontWeight: FontWeight.w900, fontSize: 13, color: Colors.black)),
       const SizedBox(height: 10),
       _buildHorizontalStaffList(provider),
       const SizedBox(height: 25),
-      Text("2. SELECT SERVICES", style: TextStyle(fontWeight: FontWeight.w900, fontSize: 11, color: kCharcoal.withOpacity(0.4))),
+      Text("2. SELECT SERVICES", style: TextStyle(fontWeight: FontWeight.w900, fontSize: 13, color: Colors.black)),
       const SizedBox(height: 10),
       _buildServiceGrid(provider),
     ]);
@@ -437,8 +436,13 @@ class _StaffEntryScreenState extends State<StaffEntryScreen> {
           shrinkWrap: true,
           padding: const EdgeInsets.only(bottom: 80),
           physics: const NeverScrollableScrollPhysics(),
+          // --- UPDATED: 3 COLUMNS AND BETTER ASPECT RATIO ---
           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 4, crossAxisSpacing: 8, mainAxisSpacing: 8, childAspectRatio: 0.8),
+              crossAxisCount: 3,
+              crossAxisSpacing: 10,
+              mainAxisSpacing: 10,
+              childAspectRatio: 1.1 // Slightly wider boxes for better readability
+          ),
           itemCount: filteredDocs.length + 1,
           itemBuilder: (context, index) {
             if (index == filteredDocs.length) {
@@ -451,8 +455,9 @@ class _StaffEntryScreenState extends State<StaffEntryScreen> {
                       border: Border.all(color: Colors.orange.withOpacity(0.3))
                   ),
                   child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-                    Icon(Icons.add_circle_outline, color: Colors.orange.shade700, size: 20),
-                    Text("Other", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 10, color: Colors.orange.shade700)),
+                    Icon(Icons.add_circle_outline, color: Colors.orange.shade700, size: 24),
+                    const SizedBox(height: 4),
+                    Text("Other", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.orange.shade700)),
                   ]),
                 ),
               );
@@ -466,18 +471,19 @@ class _StaffEntryScreenState extends State<StaffEntryScreen> {
             return InkWell(
               onTap: () => provider.addService({"name": sName, "price": double.tryParse(sPrice) ?? 0.0}),
               child: Container(
+                padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
                     color: kWhite,
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(color: Colors.grey.shade100),
-                    boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 2)]
+                    boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 4, offset: const Offset(0, 2))]
                 ),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text(sName, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 9, color: kCharcoal), textAlign: TextAlign.center, maxLines: 1),
-                    const SizedBox(height: 2),
-                    Text("Rs $sPrice", style: TextStyle(color: kGoldDark, fontSize: 9, fontWeight: FontWeight.bold)),
+                    Text(sName, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: kCharcoal), textAlign: TextAlign.center, maxLines: 2, overflow: TextOverflow.ellipsis),
+                    const SizedBox(height: 4),
+                    Text("Rs $sPrice", style: TextStyle(color: kGoldDark, fontSize: 11, fontWeight: FontWeight.bold)),
                   ],
                 ),
               ),
