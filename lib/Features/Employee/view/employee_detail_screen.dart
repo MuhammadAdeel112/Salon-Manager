@@ -19,7 +19,6 @@ class EmployeeDetailsScreen extends StatelessWidget {
     this.customRange,
   });
 
-  // --- GOLDEN PALETTE ---
   final Color kBg = const Color(0xFFFFFDE7);
   final Color kGoldLight = const Color(0xFFF3E5AB);
   final Color kGoldPrimary = const Color(0xFFD4AF37);
@@ -72,11 +71,8 @@ class EmployeeDetailsScreen extends StatelessWidget {
               if (data['name'].toString().toLowerCase().trim() == staffName.toLowerCase().trim()) {
                 employeeId = doc.id;
                 empType = data['type'] ?? "Commission";
-
-                // Standardized Field Access (Mapping old to new)
                 baseSalary = (data['salary'] ?? data['base_salary'] ?? 0).toDouble();
                 commRate = (data['commission'] ?? data['commission_percentage'] ?? 0).toDouble();
-
                 if (baseSalary == 0 && commRate == 0) {
                   double oldVal = (data['commission'] ?? data['value'] ?? 0).toDouble();
                   if (empType == "Commission") commRate = oldVal;
@@ -140,10 +136,7 @@ class EmployeeDetailsScreen extends StatelessWidget {
   }
 
   Widget _buildHeader(BuildContext context, EmployeeDetailsProvider prov, String type, String employeeId) {
-    String earningsLabel = "Earned Pay";
-    if (type == "Commission") earningsLabel = "Earned Comm.";
-    else if (type == "Fixed Salary") earningsLabel = "Fixed Salary";
-    else earningsLabel = "Salary + Comm.";
+    String earningsLabel = type == "Commission" ? "Earned Comm." : (type == "Fixed Salary" ? "Fixed Salary" : "Salary + Comm.");
 
     return Container(
       width: double.infinity,
@@ -196,14 +189,12 @@ class EmployeeDetailsScreen extends StatelessWidget {
               ],
             ),
           ),
-
           if (filterType == "Monthly" || filterType == "Daily")
             StreamBuilder<QuerySnapshot>(
               stream: prov.getPayoutStatusStream(staffName, dateFilter),
               builder: (context, snapshot) {
                 final bool isPaid = snapshot.hasData && snapshot.data!.docs.isNotEmpty;
                 final bool isAmountZero = prov.finalTakeHome <= 0;
-
                 return Padding(
                   padding: const EdgeInsets.only(top: 15),
                   child: isPaid
@@ -212,29 +203,31 @@ class EmployeeDetailsScreen extends StatelessWidget {
                     decoration: BoxDecoration(
                         color: kGoldLight.withOpacity(0.4),
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: kGoldPrimary)
-                    ),
+                        border: Border.all(color: kGoldPrimary)),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.check_circle_rounded, color: kGoldDark, size: 22),
+                        Icon(Icons.lock_rounded, color: kGoldDark, size: 20),
                         const SizedBox(width: 8),
-                        Text("SETTLED & PAID", style: TextStyle(color: kCharcoal, fontWeight: FontWeight.bold, letterSpacing: 1.1)),
+                        Text("MONTH LOCKED & PAID", style: TextStyle(color: kCharcoal, fontWeight: FontWeight.bold, letterSpacing: 1.1)),
                       ],
                     ),
                   )
                       : prov.isProcessing
                       ? const Center(child: Padding(padding: EdgeInsets.all(8.0), child: CircularProgressIndicator()))
-                      : ElevatedButton(
+                      : ElevatedButton.icon(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: isAmountZero ? Colors.grey[300] : kCharcoal,
-                      foregroundColor: isAmountZero ? Colors.grey[600] : kGoldPrimary,
-                      elevation: 0,
-                      minimumSize: const Size(double.infinity, 50),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      backgroundColor: isAmountZero ? Colors.grey[300] : kGoldDark,
+                      foregroundColor: isAmountZero ? Colors.grey[600] : kWhite,
+                      elevation: 5,
+                      shadowColor: kGoldDark.withOpacity(0.3),
+                      minimumSize: const Size(double.infinity, 55),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
                     ),
-                    onPressed: isAmountZero ? null : () => _confirmSalaryPayment(context, prov, employeeId),
-                    child: const Text("MARK AS PAID (MONTHLY CLOSING)", style: TextStyle(fontWeight: FontWeight.bold)),
+                    icon: const Icon(Icons.receipt_long_rounded, size: 20),
+                    label: const Text("PROCESS PAYROLL", style: TextStyle(fontWeight: FontWeight.w900, fontSize: 15, letterSpacing: 1)),
+                    // ✅ PIN HATA DIYA AUR DIRECT PAYSLIP PAR BHAJ DIYA
+                    onPressed: isAmountZero ? null : () => _showFinalPayslipAndPayDialog(context, prov, employeeId),
                   ),
                 );
               },
@@ -244,79 +237,160 @@ class EmployeeDetailsScreen extends StatelessWidget {
     );
   }
 
-  void _confirmSalaryPayment(BuildContext context, EmployeeDetailsProvider prov, String employeeId) {
-    if(employeeId.isEmpty) {
+  // ══════════════════════════════════════════════════════════════════
+  // ✅ PREMIUM PAYROLL SYSTEM (PIN REMOVED - DIRECT PAYSLIP)
+  // ══════════════════════════════════════════════════════════════════
+
+  void _showFinalPayslipAndPayDialog(BuildContext context, EmployeeDetailsProvider prov, String employeeId) {
+    if (employeeId.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Error: Employee Data not found"), backgroundColor: Colors.red));
       return;
     }
 
+    String selectedMethod = 'Cash';
+    final TextEditingController refController = TextEditingController();
+
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text("Final Settlement", style: TextStyle(fontWeight: FontWeight.bold, color: kCharcoal)),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text("Staff: $staffName"),
-            Text("Period: $dateFilter"),
-            const SizedBox(height: 10),
-            Text("Total Payable: Rs ${prov.finalTakeHome.toStringAsFixed(0)}", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-            const SizedBox(height: 10),
-            const Text("Warning: This will record an expense and reset this month's advances/deductions.", style: TextStyle(fontSize: 12, color: Colors.grey)),
-          ],
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancel")),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: kGoldDark, foregroundColor: kWhite),
-            onPressed: () async {
-              Navigator.pop(context);
-              prov.setProcessing(true);
+      barrierDismissible: false,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) {
+          return AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            title: const Center(child: Text("Official Payslip", style: TextStyle(fontWeight: FontWeight.w900))),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.grey.shade300, width: 1.5),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Column(
+                      children: [
+                        Text(staffName.toUpperCase(), style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                        Text("Period: $dateFilter", style: const TextStyle(color: Colors.grey, fontSize: 12)),
+                        const Divider(thickness: 1),
+                        _payslipRow("Gross Earnings", prov.totalApprovedSales),
+                        _payslipRow("Advance Deduction", prov.totalAdvance, isNegative: true),
+                        _payslipRow("Other Deduction", prov.totalDeduction, isNegative: true),
+                        const Divider(thickness: 1.5, color: Colors.black),
+                        _payslipRow("NET PAYABLE", prov.finalTakeHome, isNet: true),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  DropdownButtonFormField<String>(
+                    value: selectedMethod,
+                    decoration: InputDecoration(labelText: "Payment Method", border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
+                    items: ['Cash', 'Bank Transfer', 'JazzCash', 'EasyPaisa'].map((m) => DropdownMenuItem(value: m, child: Text(m))).toList(),
+                    onChanged: (v) => setDialogState(() => selectedMethod = v!),
+                  ),
+                  const SizedBox(height: 15),
+                  if (selectedMethod != 'Cash')
+                    TextField(
+                      controller: refController,
+                      decoration: InputDecoration(
+                        labelText: "Transaction Reference ID",
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancel")),
+              ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.green.shade700,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                icon: const Icon(Icons.lock_clock),
+                label: const Text("DISBURSE & LOCK", style: TextStyle(fontWeight: FontWeight.bold)),
+                onPressed: () async {
+                  if (selectedMethod != 'Cash' && refController.text.trim().isEmpty) {
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Please enter Reference ID"), backgroundColor: Colors.orange));
+                    return;
+                  }
 
-              try {
-                final adminProv = Provider.of<AdminProvider>(context, listen: false);
+                  Navigator.pop(context);
+                  prov.setProcessing(true);
 
-                // 1. Sync with Admin Dashboard Expenses & Reset Balances
-                await adminProv.markSalaryAsPaid(
-                  employeeId: employeeId,
-                  employeeName: staffName,
-                  salaryAmount: prov.finalTakeHome,
-                );
+                  try {
+                    final adminProv = Provider.of<AdminProvider>(context, listen: false);
 
-                // 2. Mark specific period as Paid in History
-                await prov.markAsPaid(
-                  staffName: staffName,
-                  amount: prov.finalTakeHome,
-                  monthYear: dateFilter,
-                );
+                    await adminProv.markSalaryAsPaid(
+                      employeeId: employeeId,
+                      employeeName: staffName,
+                      salaryAmount: prov.finalTakeHome,
+                      paymentMethod: selectedMethod,
+                      transactionRef: refController.text.trim(),
+                    );
 
-                prov.setProcessing(false);
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text("Salary Disbursed Successfully!"), backgroundColor: Colors.green),
-                  );
-                }
-              } catch (e) {
-                prov.setProcessing(false);
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error: $e"), backgroundColor: Colors.red));
-                }
-              }
-            },
-            child: const Text("Confirm Paid"),
+                    await prov.markAsPaid(
+                      staffName: staffName,
+                      amount: prov.finalTakeHome,
+                      monthYear: dateFilter,
+                    );
+
+                    prov.setProcessing(false);
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text("✅ Salary Disbursed & Month Locked!"),
+                          backgroundColor: Colors.green,
+                        ),
+                      );
+                    }
+                  } catch (e) {
+                    prov.setProcessing(false);
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error: $e"), backgroundColor: Colors.red));
+                    }
+                  }
+                },
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _payslipRow(String title, double amount, {bool isNegative = false, bool isNet = false}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(title, style: TextStyle(fontSize: isNet ? 14 : 12, fontWeight: isNet ? FontWeight.w900 : FontWeight.normal, color: Colors.black54)),
+          Text(
+            "${isNegative ? "-" : ""}Rs ${amount.toStringAsFixed(0)}",
+            style: TextStyle(
+              fontSize: isNet ? 18 : 13,
+              fontWeight: isNet ? FontWeight.w900 : FontWeight.bold,
+              color: isNegative ? Colors.red : (isNet ? const Color(0xFFD4AF37) : Colors.black),
+            ),
           ),
         ],
       ),
     );
   }
 
+  // ══════════════════════════════════════════════════════════════════
+
   Widget _statBox(String title, double val, Color col) {
     return Expanded(
       child: Container(
         padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(color: col.withOpacity(0.05), borderRadius: BorderRadius.circular(15), border: Border.all(color: col.withOpacity(0.1))),
+        decoration: BoxDecoration(
+            color: col.withOpacity(0.05),
+            borderRadius: BorderRadius.circular(15),
+            border: Border.all(color: col.withOpacity(0.1))),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -334,7 +408,10 @@ class EmployeeDetailsScreen extends StatelessWidget {
         onTap: () => _showAdjustmentDialog(context, title),
         child: Container(
           padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(color: col.withOpacity(0.05), borderRadius: BorderRadius.circular(15), border: Border.all(color: col.withOpacity(0.1))),
+          decoration: BoxDecoration(
+              color: col.withOpacity(0.05),
+              borderRadius: BorderRadius.circular(15),
+              border: Border.all(color: col.withOpacity(0.1))),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -356,7 +433,6 @@ class EmployeeDetailsScreen extends StatelessWidget {
   void _showAdjustmentDialog(BuildContext context, String type) {
     final TextEditingController amountController = TextEditingController();
     final TextEditingController reasonController = TextEditingController();
-
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -372,8 +448,7 @@ class EmployeeDetailsScreen extends StatelessWidget {
                   labelText: "Amount",
                   labelStyle: TextStyle(color: kGoldDark),
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: kGoldPrimary)),
-                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: kGoldDark))
-              ),
+                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: kGoldDark))),
             ),
             const SizedBox(height: 12),
             TextField(
@@ -382,8 +457,7 @@ class EmployeeDetailsScreen extends StatelessWidget {
                   labelText: "Reason (Optional)",
                   labelStyle: TextStyle(color: kGoldDark),
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: kGoldPrimary)),
-                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: kGoldDark))
-              ),
+                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: kGoldDark))),
             ),
           ],
         ),
@@ -411,33 +485,150 @@ class EmployeeDetailsScreen extends StatelessWidget {
 
   Widget _buildTransactionItem(BuildContext context, Map<String, dynamic> data, String docId) {
     final bool isApproved = (data['status'] ?? "Unapproved") == "Approved";
+
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(color: kWhite, borderRadius: BorderRadius.circular(20), boxShadow: [BoxShadow(color: kGoldDark.withOpacity(0.1), blurRadius: 5)]),
+      decoration: BoxDecoration(
+          color: kWhite,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [BoxShadow(color: kGoldDark.withOpacity(0.1), blurRadius: 5)]),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text("${data['dateOnly'] ?? ''} | ${data['time'] ?? 'N/A'}", style: const TextStyle(fontSize: 11, color: Colors.grey, fontWeight: FontWeight.bold)),
-              Text("Rs ${data['totalPrice'] ?? 0}", style: TextStyle(fontWeight: FontWeight.w900, color: kGoldDark, fontSize: 16)),
+              Expanded(
+                child: Text(
+                  "${data['dateOnly'] ?? ''} | ${data['time'] ?? 'N/A'}",
+                  style: const TextStyle(fontSize: 11, color: Colors.grey, fontWeight: FontWeight.bold),
+                ),
+              ),
+              Text(
+                "Rs ${data['totalPrice'] ?? 0}",
+                style: TextStyle(fontWeight: FontWeight.w900, color: kGoldDark, fontSize: 16),
+              ),
+              const SizedBox(width: 10),
+              InkWell(
+                onTap: () => _showDeleteDialog(context, docId),
+                borderRadius: BorderRadius.circular(8),
+                child: Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    color: Colors.red.withOpacity(0.08),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.red.withOpacity(0.25)),
+                  ),
+                  child: const Icon(Icons.delete_outline_rounded, color: Colors.red, size: 18),
+                ),
+              ),
             ],
           ),
           const Divider(height: 20),
           _buildServiceChips(data),
           const SizedBox(height: 15),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                  backgroundColor: isApproved ? kGoldDark : kCharcoal,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))
+          Row(
+            children: [
+              Expanded(
+                flex: 3,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                      backgroundColor: isApproved ? kGoldDark : kCharcoal,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      padding: const EdgeInsets.symmetric(vertical: 12)),
+                  onPressed: () => _showApproveDialog(context, docId, data['status'] ?? "Unapproved"),
+                  child: Text(isApproved ? "Approved ✓" : "Review & Approve",
+                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                ),
               ),
-              onPressed: () => _showApproveDialog(context, docId, data['status'] ?? "Unapproved"),
-              child: Text(isApproved ? "Approved ✓" : "Review & Approve", style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+              const SizedBox(width: 10),
+              if (!isApproved)
+                Expanded(
+                  flex: 1,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                        backgroundColor: kGoldLight,
+                        foregroundColor: kGoldDark,
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            side: BorderSide(color: kGoldPrimary.withOpacity(0.5))),
+                        padding: const EdgeInsets.symmetric(vertical: 12)),
+                    onPressed: () => _showEditDialog(context, docId, data),
+                    child: const Icon(Icons.edit_note_rounded, size: 24),
+                  ),
+                ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showDeleteDialog(BuildContext context, String docId) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.red.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Icon(Icons.delete_forever_rounded, color: Colors.red, size: 22),
             ),
+            const SizedBox(width: 10),
+            const Text(
+              "Delete Entry",
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.red),
+            ),
+          ],
+        ),
+        content: const Text(
+          "Are you sure you want to permanently delete this transaction entry",
+          style: TextStyle(fontSize: 13, color: Colors.grey, height: 1.5),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Cancel", style: TextStyle(color: Colors.grey)),
+          ),
+          ElevatedButton.icon(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            ),
+            icon: const Icon(Icons.delete_rounded, size: 16),
+            label: const Text("Delete", style: TextStyle(fontWeight: FontWeight.bold)),
+            onPressed: () async {
+              Navigator.pop(context);
+              try {
+                await FirebaseFirestore.instance
+                    .collection('transactions')
+                    .doc(docId)
+                    .delete();
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text("✓ Entry successfully deleted!"),
+                      backgroundColor: Colors.green,
+                      duration: Duration(seconds: 2),
+                    ),
+                  );
+                }
+              } catch (e) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text("Error: $e"), backgroundColor: Colors.red),
+                  );
+                }
+              }
+            },
           ),
         ],
       ),
@@ -448,29 +639,203 @@ class EmployeeDetailsScreen extends StatelessWidget {
     dynamic rawServices = data['selectedServices'] ?? data['services'] ?? [];
     List<String> serviceNames = [];
     if (rawServices is List) {
-      for (var s in rawServices) { serviceNames.add(s is Map ? (s['name'] ?? "") : s.toString()); }
+      for (var s in rawServices) {
+        serviceNames.add(s is Map ? (s['name'] ?? "") : s.toString());
+      }
     }
-    return Wrap(spacing: 6, runSpacing: 4, children: serviceNames.map((s) => Container(padding: const EdgeInsets.symmetric(horizontal: 10,
-        vertical: 4), decoration: BoxDecoration(color: kGoldLight, borderRadius: BorderRadius.circular(8)), child: Text(s, style: TextStyle(fontSize: 11,
-        fontWeight: FontWeight.w500, color: kCharcoal)))).toList());
+    return Wrap(
+      spacing: 6,
+      runSpacing: 4,
+      children: serviceNames
+          .map((s) => Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+        decoration: BoxDecoration(color: kGoldLight, borderRadius: BorderRadius.circular(8)),
+        child: Text(s, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: kCharcoal)),
+      ))
+          .toList(),
+    );
+  }
+
+  void _showEditDialog(BuildContext context, String docId, Map<String, dynamic> data) {
+    final TextEditingController priceController =
+    TextEditingController(text: (data['totalPrice'] ?? 0).toString());
+
+    dynamic rawServices = data['selectedServices'] ?? data['services'] ?? [];
+    List<Map<String, dynamic>> servicesList = [];
+    if (rawServices is List) {
+      for (var s in rawServices) {
+        if (s is Map) {
+          servicesList.add(Map<String, dynamic>.from(s));
+        } else {
+          servicesList.add({'name': s.toString(), 'price': 0});
+        }
+      }
+    }
+
+    List<TextEditingController> nameControllers =
+    servicesList.map((s) => TextEditingController(text: s['name']?.toString() ?? '')).toList();
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              title: Text("Edit Transaction",
+                  style: TextStyle(fontWeight: FontWeight.bold, color: kCharcoal)),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    TextField(
+                      controller: priceController,
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      decoration: InputDecoration(
+                        labelText: "Final Total Price",
+                        prefixText: "Rs ",
+                        labelStyle: TextStyle(color: kGoldDark),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                        focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(color: kGoldDark, width: 1.5)),
+                      ),
+                    ),
+                    const SizedBox(height: 18),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text("Packages / Services:",
+                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: kCharcoal)),
+                        GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              servicesList.add({'name': '', 'price': 0});
+                              nameControllers.add(TextEditingController());
+                            });
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                            decoration: BoxDecoration(color: kCharcoal, borderRadius: BorderRadius.circular(8)),
+                            child: Row(children: [
+                              Icon(Icons.add, color: kGoldPrimary, size: 14),
+                              const SizedBox(width: 4),
+                              Text("Add", style: TextStyle(color: kGoldPrimary, fontSize: 11, fontWeight: FontWeight.bold)),
+                            ]),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    if (servicesList.isEmpty)
+                      const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 8),
+                        child: Text('No services. Tap "Add" to add one.',
+                            style: TextStyle(color: Colors.grey, fontSize: 12)),
+                      ),
+                    ...List.generate(servicesList.length, (idx) {
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: TextField(
+                                controller: nameControllers[idx],
+                                style: TextStyle(fontSize: 13, color: kCharcoal),
+                                decoration: InputDecoration(
+                                  labelText: "Service name",
+                                  labelStyle: TextStyle(color: kGoldDark, fontSize: 12),
+                                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                                  focusedBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(10),
+                                      borderSide: BorderSide(color: kGoldDark, width: 1.5)),
+                                  filled: true,
+                                  fillColor: kBg,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            InkWell(
+                              onTap: () => setState(() {
+                                servicesList.removeAt(idx);
+                                nameControllers.removeAt(idx);
+                              }),
+                              borderRadius: BorderRadius.circular(8),
+                              child: Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                    color: Colors.red.withOpacity(0.08),
+                                    borderRadius: BorderRadius.circular(8)),
+                                child: const Icon(Icons.delete_outline_rounded, color: Colors.red, size: 18),
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }),
+                    const SizedBox(height: 6),
+                    const Text("Note: Edited names and price will be saved to Firestore.",
+                        style: TextStyle(fontSize: 11, color: Colors.grey)),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancel")),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(backgroundColor: kGoldDark),
+                  onPressed: () async {
+                    if (priceController.text.isNotEmpty) {
+                      for (int i = 0; i < servicesList.length; i++) {
+                        servicesList[i]['name'] = nameControllers[i].text.trim();
+                      }
+                      final double newPrice = double.tryParse(priceController.text) ?? 0;
+                      await FirebaseFirestore.instance
+                          .collection('transactions')
+                          .doc(docId)
+                          .update({
+                        'totalPrice': newPrice,
+                        'selectedServices': servicesList,
+                        'adminEdited': true,
+                      });
+                      if (context.mounted) Navigator.pop(context);
+                    }
+                  },
+                  child: const Text("Save All", style: TextStyle(color: Colors.white)),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
   }
 
   void _showApproveDialog(BuildContext context, String docId, String status) async {
     String newStatus = (status == "Approved") ? "Unapproved" : "Approved";
-    showDialog(context: context, builder: (context) => AlertDialog(
-      title: Text("Confirm Status Change", style: TextStyle(color: kCharcoal)),
-      content: Text("Do you want to change status to $newStatus?"),
-      actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancel")),
-        ElevatedButton(onPressed: () async {
-          Navigator.pop(context);
-          await FirebaseFirestore.instance.collection('transactions').doc(docId).update({'status': newStatus});
-        }, child: const Text("Confirm")),
-      ],
-    ));
+    showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text("Confirm Status Change", style: TextStyle(color: kCharcoal)),
+          content: Text("Do you want to change status to $newStatus?"),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancel")),
+            ElevatedButton(
+                onPressed: () async {
+                  Navigator.pop(context);
+                  await FirebaseFirestore.instance
+                      .collection('transactions')
+                      .doc(docId)
+                      .update({'status': newStatus});
+                },
+                child: const Text("Confirm")),
+          ],
+        ));
   }
 }
 
+// ─── AdjustmentHistoryScreen — unchanged ─────────────────────────────────────
 class AdjustmentHistoryScreen extends StatelessWidget {
   final String staffName;
   final List<QueryDocumentSnapshot> adjustments;
@@ -487,7 +852,8 @@ class AdjustmentHistoryScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: kBg,
       appBar: AppBar(
-        title: Text("$staffName's Ledger History", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: kCharcoal)),
+        title: Text("$staffName's Ledger History",
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: kCharcoal)),
         centerTitle: true,
         backgroundColor: Colors.white,
         foregroundColor: kCharcoal,
@@ -499,7 +865,8 @@ class AdjustmentHistoryScreen extends StatelessWidget {
           children: [
             Padding(
               padding: const EdgeInsets.all(16.0),
-              child: Text("Advances & Deductions", style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.grey)),
+              child: Text("Advances & Deductions",
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.grey)),
             ),
             adjustments.isEmpty
                 ? const Center(child: Padding(padding: EdgeInsets.all(20), child: Text("No record found.")))
@@ -512,17 +879,33 @@ class AdjustmentHistoryScreen extends StatelessWidget {
                 final data = adjustments[index].data() as Map<String, dynamic>;
                 final bool isAdvance = (data['type'] ?? "Advance") == "Advance";
                 DateTime? date;
-                try { if (data['date'] != null) date = DateTime.tryParse(data['date'].toString()); } catch (_) {}
+                try {
+                  if (data['date'] != null) date = DateTime.tryParse(data['date'].toString());
+                } catch (_) {}
                 final DateTime displayDate = date ?? DateTime.now();
                 Color itemColor = isAdvance ? kGoldPrimary : kCharcoal;
                 return Container(
                   margin: const EdgeInsets.only(bottom: 12),
-                  decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(15), boxShadow: [BoxShadow(color: itemColor.withOpacity(0.1), blurRadius: 10)]),
+                  decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(15),
+                      boxShadow: [BoxShadow(color: itemColor.withOpacity(0.1), blurRadius: 10)]),
                   child: ListTile(
-                    leading: CircleAvatar(backgroundColor: itemColor.withOpacity(0.1), child: Icon(isAdvance ? Icons.arrow_upward_rounded : Icons.arrow_downward_rounded, color: itemColor)),
-                    title: Text(isAdvance ? "Advance Taken" : "Salary Deduction", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: kCharcoal)),
-                    subtitle: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(data['reason'] ?? "No reason", style: const TextStyle(fontSize: 12, color: Colors.grey)), Text(DateFormat('dd MMM yyyy | hh:mm a').format(displayDate), style: const TextStyle(fontSize: 10, color: Colors.grey))]),
-                    trailing: Text("Rs ${data['amount'] ?? 0}", style: TextStyle(fontWeight: FontWeight.w900, color: itemColor)),
+                    leading: CircleAvatar(
+                        backgroundColor: itemColor.withOpacity(0.1),
+                        child: Icon(
+                            isAdvance ? Icons.arrow_upward_rounded : Icons.arrow_downward_rounded,
+                            color: itemColor)),
+                    title: Text(isAdvance ? "Advance Taken" : "Salary Deduction",
+                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: kCharcoal)),
+                    subtitle: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      Text(data['reason'] ?? "No reason",
+                          style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                      Text(DateFormat('dd MMM yyyy | hh:mm a').format(displayDate),
+                          style: const TextStyle(fontSize: 10, color: Colors.grey))
+                    ]),
+                    trailing: Text("Rs ${data['amount'] ?? 0}",
+                        style: TextStyle(fontWeight: FontWeight.w900, color: itemColor)),
                   ),
                 );
               },
@@ -530,13 +913,21 @@ class AdjustmentHistoryScreen extends StatelessWidget {
             const Divider(thickness: 2),
             Padding(
               padding: const EdgeInsets.fromLTRB(16.0, 20, 16, 10),
-              child: Text("Salary Payout History", style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.grey)),
+              child: Text("Salary Payout History",
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.grey)),
             ),
             StreamBuilder<QuerySnapshot>(
-              stream: FirebaseFirestore.instance.collection('employee_history').where('employeeName', isEqualTo: staffName.trim()).snapshots(),
+              stream: FirebaseFirestore.instance
+                  .collection('employee_history')
+                  .where('employeeName', isEqualTo: staffName.trim())
+                  .snapshots(),
               builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator());
-                if (!snapshot.hasData || snapshot.data!.docs.isEmpty) return const Padding(padding: EdgeInsets.all(20), child: Center(child: Text("No payout record found.")));
+                if (snapshot.connectionState == ConnectionState.waiting)
+                  return const Center(child: CircularProgressIndicator());
+                if (!snapshot.hasData || snapshot.data!.docs.isEmpty)
+                  return const Padding(
+                      padding: EdgeInsets.all(20),
+                      child: Center(child: Text("No payout record found.")));
                 List<QueryDocumentSnapshot> docs = snapshot.data!.docs;
                 docs.sort((a, b) {
                   final dataA = a.data() as Map<String, dynamic>;
@@ -553,12 +944,20 @@ class AdjustmentHistoryScreen extends StatelessWidget {
                     DateTime date = (data['date'] as Timestamp).toDate();
                     return Container(
                       margin: const EdgeInsets.only(bottom: 12),
-                      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(15), boxShadow: [BoxShadow(color: kGoldPrimary.withOpacity(0.1), blurRadius: 10)]),
+                      decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(15),
+                          boxShadow: [BoxShadow(color: kGoldPrimary.withOpacity(0.1), blurRadius: 10)]),
                       child: ListTile(
-                        leading: CircleAvatar(backgroundColor: kGoldPrimary.withOpacity(0.1), child: Icon(Icons.payments_outlined, color: kGoldPrimary)),
-                        title: Text("Salary Disbursed", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: kCharcoal)),
-                        subtitle: Text(DateFormat('dd MMM yyyy | hh:mm a').format(date), style: const TextStyle(fontSize: 10, color: Colors.grey)),
-                        trailing: Text("Rs ${data['amount'] ?? 0}", style: TextStyle(fontWeight: FontWeight.w900, fontSize: 15, color: kGoldPrimary)),
+                        leading: CircleAvatar(
+                            backgroundColor: kGoldPrimary.withOpacity(0.1),
+                            child: Icon(Icons.payments_outlined, color: kGoldPrimary)),
+                        title: Text("Salary Disbursed",
+                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: kCharcoal)),
+                        subtitle: Text(DateFormat('dd MMM yyyy | hh:mm a').format(date),
+                            style: const TextStyle(fontSize: 10, color: Colors.grey)),
+                        trailing: Text("Rs ${data['amount'] ?? 0}",
+                            style: TextStyle(fontWeight: FontWeight.w900, fontSize: 15, color: kGoldPrimary)),
                       ),
                     );
                   },

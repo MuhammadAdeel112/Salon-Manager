@@ -1,32 +1,43 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:provider/provider.dart'; // Naya import
+import 'package:provider/provider.dart';
 import 'package:salon_manager/Features/Dashboard/admin_provider.dart';
 import 'package:salon_manager/Features/Employee/view/employee_detail_provider.dart';
 import 'Features/Auth/admin_login.dart';
 import 'Features/Dashboard/employee/staff_provider.dart';
-
 import 'Features/staff_entry/entry_provider.dart';
 import 'Features/staff_entry/staff_entry.dart';
- // Provider file ka sahi path den
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
+
+  FirebaseFirestore.instance.settings = const Settings(
+    persistenceEnabled: true,
+    cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED,
+  );
+
   runApp(
-    // Step 1: Poori App ko MultiProvider mein wrap kiya
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => EntryProvider()),
         ChangeNotifierProvider(create: (_) => AdminProvider()),
         ChangeNotifierProvider(create: (_) => EmployeeDetailsProvider()),
         ChangeNotifierProvider(create: (_) => StaffProvider()),
-        ChangeNotifierProvider(create: (_) => EntryProvider()),
       ],
-      child: const SalonApp(),
+      child: const MyApp(),
     ),
   );
+}
+
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return const SalonApp();
+  }
 }
 
 class SalonApp extends StatelessWidget {
@@ -39,8 +50,11 @@ class SalonApp extends StatelessWidget {
       title: 'Salon Manager',
       theme: ThemeData(
         useMaterial3: true,
-        primaryColor: Colors.purple,
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.purple),
+        primaryColor: const Color(0xFFD4AF37),
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: const Color(0xFFD4AF37),
+          primary: const Color(0xFFD4AF37),
+        ),
       ),
       home: const AuthWrapper(),
     );
@@ -55,17 +69,12 @@ class AuthWrapper extends StatelessWidget {
     return DefaultTabController(
       length: 2,
       child: Scaffold(
-        body: SafeArea(
-          child: TabBarView(
-            physics: const NeverScrollableScrollPhysics(),
-            children: [
-              // 1. Staff Entry Screen (Ab ye Provider use kar sakti hai)
-              const StaffEntryScreen(),
-
-              // 2. Admin Tab
-              const AdminLoginPage(),
-            ],
-          ),
+        body: TabBarView(
+          physics: const NeverScrollableScrollPhysics(),
+          children: [
+            const StaffEntryScreen(),
+            const AdminLoginPage(),
+          ],
         ),
         bottomNavigationBar: Container(
           decoration: const BoxDecoration(
@@ -73,9 +82,9 @@ class AuthWrapper extends StatelessWidget {
             boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 5)],
           ),
           child: const TabBar(
-            labelColor: Colors.purple,
+            labelColor: Color(0xFFD4AF37),
             unselectedLabelColor: Colors.grey,
-            indicatorColor: Colors.purple,
+            indicatorColor: Color(0xFFD4AF37),
             tabs: [
               Tab(icon: Icon(Icons.group_add), text: "Staff Entry"),
               Tab(icon: Icon(Icons.admin_panel_settings), text: "Admin Panel"),

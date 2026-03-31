@@ -2,11 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'dart:ui';
 
-import '../../main.dart'; // Isme SalonApp (Staff Screen) maujood hai
+import '../../main.dart';
 import 'admin_provider.dart';
 import '../Auth/admin_login.dart';
 import '../Employee/view/employee_detail_screen.dart';
@@ -14,6 +11,8 @@ import '../Employee/expances/expance_history.dart';
 import 'employee/manage_employee.dart';
 import 'manage_services.dart';
 
+// New Logout Dialog Import
+import 'logout_dialog.dart';   // ← Yeh line add karni hai
 
 class AdminDashboard extends StatefulWidget {
   const AdminDashboard({super.key});
@@ -27,12 +26,11 @@ class _AdminDashboardState extends State<AdminDashboard> {
   DateTimeRange? customRange;
   DateTime _selectedMonth = DateTime.now();
 
-  // --- UPDATED GOLDEN PALETTE ---
-  final Color kBg = const Color(0xFFFFFDE7); // Creamy background like login
-  final Color kGoldLight = const Color(0xFFF3E5AB);
+  final Color kBg = const Color(0xFFFDFAF3);
+  final Color kGoldLight = const Color(0xFFF8E9B0);
   final Color kGoldPrimary = const Color(0xFFD4AF37);
-  final Color kGoldDark = const Color(0xFFC69C34);
-  final Color kCharcoal = const Color(0xFF2C2C2C);
+  final Color kGoldDark = const Color(0xFFAA8C2C);
+  final Color kCharcoal = const Color(0xFF1F1F1F);
   final Color kWhite = Colors.white;
 
   @override
@@ -51,7 +49,8 @@ class _AdminDashboardState extends State<AdminDashboard> {
       try {
         List<String> parts = dateStr.trim().split('-');
         if (parts.length == 3) {
-          return DateTime(int.parse(parts[0]), int.parse(parts[1]), int.parse(parts[2]));
+          return DateTime(int.parse(parts[0]), int.parse(parts[1]),
+              int.parse(parts[2]));
         }
       } catch (e) {}
       return null;
@@ -69,43 +68,17 @@ class _AdminDashboardState extends State<AdminDashboard> {
     return "Daily Overview";
   }
 
-  void _showLogoutDialog() {
-    showCupertinoDialog(
-      context: context,
-      builder: (dialogContext) => CupertinoAlertDialog(
-        title: const Text("Logout"),
-        content: const Text("Are you sure you want to exit the Admin Portal?"),
-        actions: [
-          CupertinoDialogAction(
-            child: const Text("No"),
-            onPressed: () => Navigator.pop(dialogContext),
-          ),
-          CupertinoDialogAction(
-            isDestructiveAction: true,
-            child: const Text("Yes"),
-            onPressed: () async {
-              Navigator.pop(dialogContext);
-              await FirebaseAuth.instance.signOut();
-              if (mounted) {
-                Navigator.pushAndRemoveUntil(
-                  context,
-                  MaterialPageRoute(builder: (_) => const SalonApp()),
-                      (route) => false,
-                );
-              }
-            },
-          ),
-        ],
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final adminProv = Provider.of<AdminProvider>(context);
+
+    final double sw = MediaQuery.of(context).size.width;
+    final bool isTablet = sw >= 600;
+
     String todayDate = DateFormat('yyyy-MM-dd').format(DateTime.now());
     String currentMonthStr = DateFormat('yyyy-MM').format(_selectedMonth);
-    var totals = adminProv.calculateTotals(selectedFilter, todayDate, currentMonthStr, customRange);
+    var totals = adminProv.calculateTotals(
+        selectedFilter, todayDate, currentMonthStr, customRange);
 
     return Scaffold(
       backgroundColor: kBg,
@@ -114,17 +87,25 @@ class _AdminDashboardState extends State<AdminDashboard> {
         elevation: 0,
         toolbarHeight: 50,
         centerTitle: true,
-        title: Text("Admin Dashboard", style: TextStyle(color: kCharcoal, fontSize: 18, fontWeight: FontWeight.bold)),
+        title: Text(
+          "Admin Dashboard",
+          style: TextStyle(
+            color: kCharcoal,
+            fontSize: isTablet ? 18 : 15,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
         actions: [
           IconButton(
-            // Changed to Gold/Dark theme instead of Red
-            icon: Icon(Icons.logout_rounded, color: kGoldDark, size: 22),
-            onPressed: () => _showLogoutDialog(),
+            icon: Icon(Icons.logout_rounded,
+                color: kGoldDark, size: isTablet ? 22 : 20),
+            onPressed: () => LogoutDialog.show(context),   // ← Naya Call
           )
         ],
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 5),
+        padding: EdgeInsets.symmetric(
+            horizontal: isTablet ? 15 : 12, vertical: 5),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -132,57 +113,90 @@ class _AdminDashboardState extends State<AdminDashboard> {
               padding: const EdgeInsets.symmetric(vertical: 8),
               child: Row(
                 children: [
-                  _filterBtn("Daily"),
+                  _filterBtn("Daily", isTablet),
                   const SizedBox(width: 10),
-                  _filterBtn("Monthly"),
+                  _filterBtn("Monthly", isTablet),
                   const SizedBox(width: 10),
-                  _filterBtn("Custom"),
+                  _filterBtn("Custom", isTablet),
                 ],
               ),
             ),
             const SizedBox(height: 15),
-            Text(_getHeaderText(), style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: kCharcoal)),
+            Text(
+              _getHeaderText(),
+              style: TextStyle(
+                fontSize: isTablet ? 16 : 14,
+                fontWeight: FontWeight.bold,
+                color: kCharcoal,
+              ),
+            ),
             const SizedBox(height: 12),
             Row(
               children: [
-                // PASSING GOLDEN COLORS HERE
-                _buildStatCard("Total Sales", totals['sales']!, kGoldLight, kGoldDark, Icons.attach_money),
+                _buildStatCard("Total Sales", totals['sales']!, kGoldLight,
+                    kGoldDark, Icons.attach_money, isTablet),
                 const SizedBox(width: 8),
-                _buildStatCard("Expenses", totals['expenses']!, kGoldPrimary, kCharcoal, Icons.south_west),
+                _buildStatCard("Expenses", totals['expenses']!, kGoldPrimary,
+                    kCharcoal, Icons.south_west, isTablet),
                 const SizedBox(width: 8),
-                _buildStatCard("Net Profit", totals['profit']!, kCharcoal, kGoldPrimary, Icons.north_east),
+                _buildStatCard("Net Profit", totals['profit']!, kCharcoal,
+                    kGoldPrimary, Icons.north_east, isTablet),
               ],
             ),
-            const SizedBox(height: 25),
-            Text("Admin Management", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: kCharcoal)),
+            const SizedBox(height: 30),
+            Text(
+              "Admin Management",
+              style: TextStyle(
+                fontSize: isTablet ? 16 : 14,
+                fontWeight: FontWeight.bold,
+                color: kCharcoal,
+              ),
+            ),
             const SizedBox(height: 15),
             Row(
               children: [
-                // PASSING GOLDEN COLORS HERE
-                _buildSquareMenu("Staff", kGoldPrimary, const ManageEmployees(), "assets/emp.png"),
+                _buildSquareMenu("Staff", kGoldPrimary,
+                    const ManageEmployees(), "assets/emp.png", isTablet),
                 const SizedBox(width: 12),
-                _buildSquareMenu("Services", kGoldPrimary, const ManageServices(), "assets/logo.png"),
+                _buildSquareMenu("Services", kGoldPrimary,
+                    const ManageServices(), "assets/logo.png", isTablet),
                 const SizedBox(width: 12),
                 _buildSquareMenu(
                   "Expenses",
                   kGoldPrimary,
-                  ExpenseHistoryScreen(filterType: selectedFilter, todayDate: todayDate, currentMonth: currentMonthStr, customRange: customRange),
+                  ExpenseHistoryScreen(
+                    filterType: selectedFilter,
+                    todayDate: todayDate,
+                    currentMonth: currentMonthStr,
+                    customRange: customRange,
+                  ),
                   "assets/exp.png",
+                  isTablet,
                 ),
               ],
             ),
-            const SizedBox(height: 25),
-            Text("Employee Performance", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: kCharcoal)),
-            const SizedBox(height: 10),
-            _buildEmployeeTable(adminProv, todayDate, currentMonthStr),
-            const SizedBox(height: 20),
+            const SizedBox(height: 30),
+            Text(
+              "Employee Performance",
+              style: TextStyle(
+                fontSize: isTablet ? 18 : 15,
+                fontWeight: FontWeight.bold,
+                color: kCharcoal,
+              ),
+            ),
+            const SizedBox(height: 12),
+            _buildEmployeeTable(
+                adminProv, todayDate, currentMonthStr, sw, isTablet),
+            const SizedBox(height: 40),
           ],
         ),
       ),
     );
   }
 
-  Widget _filterBtn(String label) {
+  // ==================== Baaki sab methods same rakhe gaye hain ====================
+
+  Widget _filterBtn(String label, bool isTablet) {
     bool isSel = selectedFilter == label;
     return Expanded(
       child: InkWell(
@@ -199,66 +213,115 @@ class _AdminDashboardState extends State<AdminDashboard> {
           }
         },
         child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 14),
+          padding: EdgeInsets.symmetric(vertical: isTablet ? 14 : 11),
           decoration: BoxDecoration(
-            color: isSel ? kCharcoal : kWhite, // Selected is Dark, Unselected is White
+            color: isSel ? kCharcoal : kWhite,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: isSel ? kCharcoal : kGoldPrimary.withOpacity(0.3)), // Border is Gold
-            boxShadow: isSel ? [BoxShadow(color: kGoldDark.withOpacity(0.2), blurRadius: 4, offset: const Offset(0, 2))] : null,
+            border: Border.all(
+                color: isSel
+                    ? kCharcoal
+                    : kGoldPrimary.withOpacity(0.3)),
+            boxShadow: isSel
+                ? [
+              BoxShadow(
+                  color: kGoldDark.withOpacity(0.2),
+                  blurRadius: 4,
+                  offset: const Offset(0, 2))
+            ]
+                : null,
           ),
-          child: Text(label, textAlign: TextAlign.center, style: TextStyle(color: isSel ? kWhite : kCharcoal, fontSize: 14, fontWeight: FontWeight.bold)),
+          child: Text(
+            label,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: isSel ? kWhite : kCharcoal,
+              fontSize: isTablet ? 14 : 12,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildStatCard(String title, double val, Color bg, Color textCol, IconData icon) {
+  Widget _buildStatCard(String title, double val, Color bg, Color textCol,
+      IconData icon, bool isTablet) {
     return Expanded(
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 10),
+        height: isTablet ? 160 : 130,
+        padding: EdgeInsets.symmetric(
+            vertical: isTablet ? 24 : 16,
+            horizontal: isTablet ? 14 : 10),
         decoration: BoxDecoration(
-            color: bg,
-            borderRadius: BorderRadius.circular(15),
-            boxShadow: [BoxShadow(color: textCol.withOpacity(0.1), blurRadius: 4, offset: const Offset(0, 2))]
+          color: bg,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+                color: textCol.withOpacity(0.12),
+                blurRadius: 6,
+                offset: const Offset(0, 3))
+          ],
         ),
         child: Column(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Icon(icon, size: 16, color: textCol),
+                Icon(icon, size: isTablet ? 24 : 20, color: textCol),
               ],
             ),
-            const SizedBox(height: 10),
-            Text(title, style: TextStyle(color: textCol.withOpacity(0.9), fontSize: 10, fontWeight: FontWeight.w600)),
-            const SizedBox(height: 4),
-            FittedBox(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                    title == "Total Sales" ? val.toStringAsFixed(0) : "PKR ${val.toStringAsFixed(0)}",
-                    style: TextStyle(color: textCol, fontSize: 17, fontWeight: FontWeight.bold)
-                )
+            SizedBox(height: isTablet ? 12 : 6),
+            Text(
+              title,
+              style: TextStyle(
+                color: textCol.withOpacity(0.9),
+                fontSize: isTablet ? 13 : 11,
+                fontWeight: FontWeight.w600,
+              ),
             ),
+            SizedBox(height: isTablet ? 8 : 4),
+            FittedBox(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                title == "Total Sales"
+                    ? val.toStringAsFixed(0)
+                    : "PKR ${val.toStringAsFixed(0)}",
+                style: TextStyle(
+                  color: textCol,
+                  fontSize: isTablet ? 26 : 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            SizedBox(height: isTablet ? 8 : 4),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildSquareMenu(String title, Color col, Widget screen, String imagePath) {
+  Widget _buildSquareMenu(String title, Color col, Widget screen,
+      String imagePath, bool isTablet) {
     return Expanded(
       child: Column(
         children: [
           InkWell(
-            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => screen)),
+            onTap: () => Navigator.push(
+                context, MaterialPageRoute(builder: (_) => screen)),
             child: Container(
-              height: 85,
+              height: isTablet ? 180 : 140,
               decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(15),
-                border: Border.all(color: col.withOpacity(0.15), width: 1.5),
-                boxShadow: [BoxShadow(color: kGoldDark.withOpacity(0.05), blurRadius: 8, offset: const Offset(0, 3))],
+                color: kWhite,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: col.withOpacity(0.2), width: 1.5),
+                boxShadow: [
+                  BoxShadow(
+                      color: kGoldDark.withOpacity(0.08),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4))
+                ],
                 image: DecorationImage(
                   image: AssetImage(imagePath),
                   fit: BoxFit.cover,
@@ -266,134 +329,338 @@ class _AdminDashboardState extends State<AdminDashboard> {
               ),
             ),
           ),
-          const SizedBox(height: 8),
-          Text(title, style: TextStyle(color: kCharcoal, fontSize: 12, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 10),
+          Text(
+            title,
+            style: TextStyle(
+              color: kCharcoal,
+              fontSize: isTablet ? 13 : 11,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildEmployeeTable(AdminProvider prov, String today, String month) {
+  Widget _buildEmployeeTable(AdminProvider prov, String today, String month,
+      double sw, bool isTablet) {
     return Container(
       width: double.infinity,
-      decoration: BoxDecoration(color: kWhite, borderRadius: BorderRadius.circular(12), boxShadow: [BoxShadow(color: kGoldDark.withOpacity(0.05), blurRadius: 8)]),
-      child: DataTable(
-        columnSpacing: 8,
-        horizontalMargin: 10,
-        headingRowHeight: 40,
-        columns: [
-          DataColumn(label: Text("Staff", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: kCharcoal))),
-          DataColumn(label: Text("Rev", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: kCharcoal))),
-          DataColumn(label: Text("Payout", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: kCharcoal))),
-          DataColumn(label: Text("Action", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: kCharcoal))),
+      decoration: BoxDecoration(
+        color: kWhite,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: kGoldDark.withOpacity(0.10),
+            blurRadius: 14,
+            offset: const Offset(0, 6),
+          ),
         ],
-        rows: prov.employees.map((empDoc) {
-          var empData = empDoc.data() as Map<String, dynamic>;
-          String name = empData['name'] ?? "";
-          String type = empData['type'] ?? "Salary"; // Expected values: "Salary", "Commission", "Both"
+      ),
+      child: SingleChildScrollView(
+        scrollDirection: isTablet ? Axis.vertical : Axis.horizontal,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(16),
+          child: DataTable(
+            showCheckboxColumn: false,
+            columnSpacing: isTablet ? 24 : 16,
+            horizontalMargin: isTablet ? 20 : 12,
+            headingRowHeight: isTablet ? 52 : 44,
+            dataRowHeight: isTablet ? 72 : 60,
+            headingRowColor: MaterialStateProperty.all(
+                kGoldLight.withOpacity(0.45)),
+            border: TableBorder(
+              horizontalInside: BorderSide(
+                  color: kGoldLight.withOpacity(0.5), width: 0.8),
+              verticalInside: BorderSide(
+                  color: kGoldLight.withOpacity(0.3), width: 0.8),
+              bottom: BorderSide.none,
+              top: BorderSide.none,
+            ),
+            columns: [
+              DataColumn(
+                label: Text("Staff",
+                    style: TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: isTablet ? 14 : 12,
+                        color: const Color(0xFF2C2C2C))),
+              ),
+              DataColumn(
+                label: Text("Revenue",
+                    style: TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: isTablet ? 14 : 12,
+                        color: const Color(0xFF2C2C2C))),
+              ),
+              DataColumn(
+                label: Text("Payout",
+                    style: TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: isTablet ? 14 : 12,
+                        color: const Color(0xFF2C2C2C))),
+              ),
+              DataColumn(
+                label: Text("Action",
+                    style: TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: isTablet ? 14 : 12,
+                        color: const Color(0xFF2C2C2C))),
+              ),
+            ],
+            rows: prov.employees.map((empDoc) {
+              var empData = empDoc.data() as Map<String, dynamic>;
+              String name = empData['name'] ?? "Unknown";
+              String type = empData['type'] ?? "Salary";
 
-          // Logic for handling both Salary and Commission fields
-          double fixedAmount = (empData['value'] ?? empData['salary'] ?? 0).toDouble();
-          double commissionRate = (empData['commission'] ?? 0).toDouble();
+              double fixedAmount =
+              (empData['value'] ?? empData['salary'] ?? 0).toDouble();
+              double commissionRate =
+              (empData['commission'] ?? 0).toDouble();
 
-          double rev = 0;
+              double rev = 0;
+              for (var t in prov.transactions) {
+                var tData = t.data() as Map<String, dynamic>;
+                String docDate = (tData['dateOnly'] ?? "").toString().trim();
+                bool include = false;
 
-          for (var t in prov.transactions) {
-            var tData = t.data() as Map<String, dynamic>;
-            String docDate = (tData['dateOnly'] ?? "").toString().trim();
-            bool include = false;
+                if (selectedFilter == "Daily") {
+                  include = (docDate == today);
+                } else if (selectedFilter == "Monthly") {
+                  include = docDate.startsWith(month);
+                } else if (selectedFilter == "Custom" && customRange != null) {
+                  DateTime? dt = _safeParse(docDate);
+                  if (dt != null) {
+                    include = dt.isAfter(customRange!.start
+                        .subtract(const Duration(days: 1))) &&
+                        dt.isBefore(
+                            customRange!.end.add(const Duration(days: 1)));
+                  }
+                }
 
-            if (selectedFilter == "Daily") {
-              include = (docDate == today);
-            } else if (selectedFilter == "Monthly") {
-              include = docDate.startsWith(month);
-            } else if (selectedFilter == "Custom" && customRange != null) {
-              DateTime? dt = _safeParse(docDate);
-              if (dt != null) {
-                include = dt.isAfter(customRange!.start.subtract(const Duration(days: 1))) &&
-                    dt.isBefore(customRange!.end.add(const Duration(days: 1)));
+                if (tData['staffName'] == name &&
+                    include &&
+                    tData['status'] == "Approved") {
+                  rev += (tData['totalPrice'] ?? 0).toDouble();
+                }
               }
-            }
 
-            if (tData['staffName'] == name && include && tData['status'] == "Approved") {
-              rev += (tData['totalPrice'] ?? 0).toDouble();
-            }
-          }
+              double payout = 0;
+              String subTitle = "";
+              Color payoutColor = kCharcoal;
 
-          // --- FIXED HYBRID PAYOUT CALCULATION ---
-          double payout = 0;
-          String subTitle = "";
+              if (type == "Both") {
+                payout = fixedAmount + (rev * commissionRate / 100);
+                subTitle = "Fix + ${commissionRate.toStringAsFixed(0)}%";
+                payoutColor = Colors.blue.shade700;
+              } else if (type == "Commission") {
+                payout = (rev * commissionRate / 100);
+                subTitle = "${commissionRate.toStringAsFixed(0)}%";
+                payoutColor = Colors.amber.shade800;
+              } else {
+                payout = fixedAmount;
+                subTitle = "Fixed";
+                payoutColor = Colors.green.shade700;
+              }
 
-          if (type == "Both") {
-            payout = fixedAmount + (rev * commissionRate / 100);
-            subTitle = "Fix + $commissionRate%";
-          } else if (type == "Commission") {
-            payout = (rev * commissionRate / 100);
-            subTitle = "$commissionRate%";
-          } else {
-            // Default is Salary/Fixed
-            payout = fixedAmount;
-            subTitle = "Fixed";
-          }
+              double progress = (rev / 50000).clamp(0.0, 1.0);
 
-          return DataRow(cells: [
-            DataCell(Text(name, style: TextStyle(fontSize: 11, color: kCharcoal))),
-            DataCell(Text(rev.toStringAsFixed(0), style: TextStyle(fontSize: 11, color: kCharcoal))),
-            DataCell(
-              Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(payout.toStringAsFixed(0), style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: kCharcoal)),
-                  Text(subTitle, style: const TextStyle(fontSize: 9, color: Colors.grey)),
-                ],
-              ),
-            ),
-            DataCell(
-              GestureDetector(
-                onTap: () {
-                  Navigator.push(context, MaterialPageRoute(builder: (_) => EmployeeDetailsScreen(
-                      staffName: name,
-                      dateFilter: selectedFilter == "Daily" ? today : month,
-                      filterType: selectedFilter,
-                      customRange: customRange
-                  )));
-                },
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: kGoldLight,
-                    borderRadius: BorderRadius.circular(4),
-                    border: Border.all(color: kGoldPrimary),
+              return DataRow(
+                cells: [
+                  DataCell(
+                    Row(
+                      children: [
+                        CircleAvatar(
+                          radius: isTablet ? 20 : 16,
+                          backgroundColor: kGoldPrimary.withOpacity(0.25),
+                          child: Text(
+                            name.isNotEmpty ? name[0].toUpperCase() : "?",
+                            style: TextStyle(
+                              color: kGoldDark,
+                              fontWeight: FontWeight.bold,
+                              fontSize: isTablet ? 16 : 13,
+                            ),
+                          ),
+                        ),
+                        SizedBox(width: isTablet ? 16 : 8),
+                        Expanded(
+                          child: Text(
+                            name,
+                            style: TextStyle(
+                              fontSize: isTablet ? 14 : 12,
+                              fontWeight: FontWeight.w600,
+                              color: const Color(0xFF2C2C2C),
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                  child: Text("View", style: TextStyle(color: kCharcoal, fontSize: 10, fontWeight: FontWeight.bold)),
-                ),
-              ),
-            ),
-          ]);
-        }).toList(),
+                  DataCell(
+                    Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          rev.toStringAsFixed(0),
+                          style: TextStyle(
+                            fontSize: isTablet ? 14 : 12,
+                            fontWeight: FontWeight.bold,
+                            color: const Color(0xFF2C2C2C),
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Container(
+                          width: isTablet ? 100 : 70,
+                          height: 8,
+                          decoration: BoxDecoration(
+                            color: kGoldLight.withOpacity(0.6),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: FractionallySizedBox(
+                            widthFactor: progress,
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: kGoldPrimary,
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  DataCell(
+                    Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(Icons.payments_rounded,
+                                size: isTablet ? 16 : 14, color: payoutColor),
+                            SizedBox(width: isTablet ? 8 : 4),
+                            Text(
+                              payout.toStringAsFixed(0),
+                              style: TextStyle(
+                                fontSize: isTablet ? 14 : 12,
+                                fontWeight: FontWeight.bold,
+                                color: payoutColor,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          subTitle,
+                          style: TextStyle(
+                            fontSize: isTablet ? 11 : 10,
+                            color: Colors.grey.shade700,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  DataCell(
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => EmployeeDetailsScreen(
+                              staffName: name,
+                              dateFilter:
+                              selectedFilter == "Daily" ? today : month,
+                              filterType: selectedFilter,
+                              customRange: customRange,
+                            ),
+                          ),
+                        );
+                      },
+                      child: Container(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: isTablet ? 16 : 10,
+                          vertical: isTablet ? 10 : 7,
+                        ),
+                        decoration: BoxDecoration(
+                          color: kGoldPrimary.withOpacity(0.18),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                              color: kGoldPrimary, width: 1.3),
+                        ),
+                        child: Text(
+                          "View Details",
+                          style: TextStyle(
+                            color: const Color(0xFFC69C34),
+                            fontSize: isTablet ? 13 : 11,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              );
+            }).toList(),
+          ),
+        ),
       ),
     );
   }
 
   void _pickMonth() {
-    showModalBottomSheet(context: context, builder: (_) => SizedBox(height: 300, child: Column(children: [const Padding(padding: EdgeInsets.all(12), child: Text("Select Month", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16))), Expanded(child: CupertinoDatePicker(mode: CupertinoDatePickerMode.monthYear, initialDateTime: _selectedMonth, onDateTimeChanged: (d) => _selectedMonth = d)), CupertinoButton(child: const Text("Apply"), onPressed: () { setState(() => selectedFilter = "Monthly"); Navigator.pop(context); })])));
+    showModalBottomSheet(
+      context: context,
+      builder: (_) => SizedBox(
+        height: 300,
+        child: Column(
+          children: [
+            const Padding(
+              padding: EdgeInsets.all(12),
+              child: Text("Select Month",
+                  style: TextStyle(
+                      fontWeight: FontWeight.bold, fontSize: 16)),
+            ),
+            Expanded(
+              child: CupertinoDatePicker(
+                mode: CupertinoDatePickerMode.monthYear,
+                initialDateTime: _selectedMonth,
+                onDateTimeChanged: (d) => _selectedMonth = d,
+              ),
+            ),
+            CupertinoButton(
+              child: const Text("Apply"),
+              onPressed: () {
+                setState(() => selectedFilter = "Monthly");
+                Navigator.pop(context);
+              },
+            )
+          ],
+        ),
+      ),
+    );
   }
 
   Future<void> _pickCustomRange() async {
-    // Date picker color changed to Gold/Black theme
     DateTimeRange? picked = await showDateRangePicker(
-        context: context,
-        firstDate: DateTime(2023),
-        lastDate: DateTime.now(),
-        builder: (context, child) => Theme(
-            data: ThemeData.light().copyWith(
-              colorScheme: ColorScheme.light(primary: kGoldDark), // Gold primary color
-              buttonTheme: const ButtonThemeData(textTheme: ButtonTextTheme.primary),
-            ),
-            child: child!
-        )
+      context: context,
+      firstDate: DateTime(2023),
+      lastDate: DateTime.now(),
+      builder: (context, child) => Theme(
+        data: ThemeData.light().copyWith(
+          colorScheme: ColorScheme.light(primary: kGoldDark),
+          buttonTheme: const ButtonThemeData(
+              textTheme: ButtonTextTheme.primary),
+        ),
+        child: child!,
+      ),
     );
-    if (picked != null) setState(() { customRange = picked; selectedFilter = "Custom"; });
+    if (picked != null) {
+      setState(() {
+        customRange = picked;
+        selectedFilter = "Custom";
+      });
+    }
   }
 }

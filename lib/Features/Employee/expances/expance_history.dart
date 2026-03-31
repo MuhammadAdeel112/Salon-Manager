@@ -12,7 +12,7 @@ class ExpenseHistoryScreen extends StatelessWidget {
     required this.filterType,
     required this.todayDate,
     required this.currentMonth,
-    this.customRange
+    this.customRange,
   });
 
   // --- GOLDEN PALETTE ---
@@ -38,10 +38,23 @@ class ExpenseHistoryScreen extends StatelessWidget {
             .orderBy('timestamp', descending: true)
             .snapshots(),
         builder: (context, snapshot) {
-          if (!snapshot.hasData) return Center(child: CircularProgressIndicator(color: kGoldDark));
+          if (snapshot.hasError) {
+            return Center(child: Text("Error: ${snapshot.error}", style: TextStyle(color: Colors.red)));
+          }
+
+          if (!snapshot.hasData) {
+            return Center(child: CircularProgressIndicator(color: kGoldDark));
+          }
 
           var filtered = snapshot.data!.docs.where((doc) {
-            String docDate = doc['dateOnly'] ?? "";
+            final data = doc.data() as Map<String, dynamic>?;
+
+            // Safe check: agar data null ho ya dateOnly missing ho to skip
+            if (data == null || !data.containsKey('dateOnly') || data['dateOnly'] == null) {
+              return false;
+            }
+
+            String docDate = (data['dateOnly'] as String).trim();
 
             if (filterType == "Daily") {
               return docDate == todayDate;
@@ -68,23 +81,28 @@ class ExpenseHistoryScreen extends StatelessWidget {
             itemCount: filtered.length,
             itemBuilder: (context, index) {
               var data = filtered[index].data() as Map<String, dynamic>;
+
+              // Safe access
+              String description = data['description']?.toString() ?? "No Detail";
+              String dateOnly = data['dateOnly']?.toString() ?? "N/A";
+              double amount = (data['amount'] as num?)?.toDouble() ?? 0.0;
+
               return Card(
                 margin: const EdgeInsets.only(bottom: 10),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 elevation: 0,
                 color: Colors.white,
-                shadowColor: kGoldDark.withOpacity(0.1), // Gold Shadow
+                shadowColor: kGoldDark.withOpacity(0.1),
                 child: ListTile(
                   leading: CircleAvatar(
-                    backgroundColor: kGoldLight, // Gold background
-                    child: Icon(Icons.money_off, color: kGoldDark), // Gold Icon
+                    backgroundColor: kGoldLight,
+                    child: Icon(Icons.money_off, color: kGoldDark),
                   ),
-                  title: Text(data['description'] ?? "No Detail",
-                      style: TextStyle(fontWeight: FontWeight.bold, color: kCharcoal)),
-                  subtitle: Text(data['dateOnly'] ?? "", style: TextStyle(color: kGoldDark)),
+                  title: Text(description, style: TextStyle(fontWeight: FontWeight.bold, color: kCharcoal)),
+                  subtitle: Text(dateOnly, style: TextStyle(color: kGoldDark)),
                   trailing: Text(
-                      "Rs ${data['amount']}",
-                      style: TextStyle(color: kCharcoal, fontWeight: FontWeight.bold, fontSize: 16) // Dark Amount
+                    "Rs ${amount.toStringAsFixed(0)}",
+                    style: TextStyle(color: kCharcoal, fontWeight: FontWeight.bold, fontSize: 16),
                   ),
                 ),
               );
