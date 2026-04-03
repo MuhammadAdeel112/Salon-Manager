@@ -26,6 +26,9 @@ dependencies:
   # Image flickering aur slow loading khatam karne ke liye naya package
   cached_network_image: ^3.4.1
 
+  # WhatsApp receipt share karne ke liye
+  share_plus: ^12.0.2
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
