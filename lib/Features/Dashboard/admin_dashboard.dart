@@ -10,9 +10,8 @@ import '../Employee/view/employee_detail_screen.dart';
 import '../Employee/expances/expance_history.dart';
 import 'employee/manage_employee.dart';
 import 'manage_services.dart';
-
-// New Logout Dialog Import
-import 'logout_dialog.dart';   // ← Yeh line add karni hai
+import 'logout_dialog.dart';
+import 'app_drawer.dart'; // ← Sirf yeh naya import add kiya
 
 class AdminDashboard extends StatefulWidget {
   const AdminDashboard({super.key});
@@ -82,11 +81,24 @@ class _AdminDashboardState extends State<AdminDashboard> {
 
     return Scaffold(
       backgroundColor: kBg,
+
+      // ✅ SIRF YEH DRAWER ADD KIYA — baaki sab same hai
+      drawer: AppDrawer(
+        selectedFilter: selectedFilter,
+        todayDate: todayDate,
+        currentMonth: currentMonthStr,
+        customRange: customRange,
+      ),
+
       appBar: AppBar(
         backgroundColor: kBg,
         elevation: 0,
         toolbarHeight: 50,
         centerTitle: true,
+
+        // ✅ Drawer icon automatically AppBar mein aa jayega
+        // Flutter khud hamburger icon add karta hai jab drawer ho
+
         title: Text(
           "Admin Dashboard",
           style: TextStyle(
@@ -99,10 +111,12 @@ class _AdminDashboardState extends State<AdminDashboard> {
           IconButton(
             icon: Icon(Icons.logout_rounded,
                 color: kGoldDark, size: isTablet ? 22 : 20),
-            onPressed: () => LogoutDialog.show(context),   // ← Naya Call
+            onPressed: () => LogoutDialog.show(context),
           )
         ],
       ),
+
+      // ✅ Body bilkul same — koi change nahi
       body: SingleChildScrollView(
         padding: EdgeInsets.symmetric(
             horizontal: isTablet ? 15 : 12, vertical: 5),
@@ -193,8 +207,6 @@ class _AdminDashboardState extends State<AdminDashboard> {
       ),
     );
   }
-
-  // ==================== Baaki sab methods same rakhe gaye hain ====================
 
   Widget _filterBtn(String label, bool isTablet) {
     bool isSel = selectedFilter == label;
@@ -428,7 +440,8 @@ class _AdminDashboardState extends State<AdminDashboard> {
                   include = (docDate == today);
                 } else if (selectedFilter == "Monthly") {
                   include = docDate.startsWith(month);
-                } else if (selectedFilter == "Custom" && customRange != null) {
+                } else if (selectedFilter == "Custom" &&
+                    customRange != null) {
                   DateTime? dt = _safeParse(docDate);
                   if (dt != null) {
                     include = dt.isAfter(customRange!.start
@@ -539,7 +552,8 @@ class _AdminDashboardState extends State<AdminDashboard> {
                         Row(
                           children: [
                             Icon(Icons.payments_rounded,
-                                size: isTablet ? 16 : 14, color: payoutColor),
+                                size: isTablet ? 16 : 14,
+                                color: payoutColor),
                             SizedBox(width: isTablet ? 8 : 4),
                             Text(
                               payout.toStringAsFixed(0),
@@ -570,8 +584,9 @@ class _AdminDashboardState extends State<AdminDashboard> {
                           MaterialPageRoute(
                             builder: (_) => EmployeeDetailsScreen(
                               staffName: name,
-                              dateFilter:
-                              selectedFilter == "Daily" ? today : month,
+                              dateFilter: selectedFilter == "Daily"
+                                  ? today
+                                  : month,
                               filterType: selectedFilter,
                               customRange: customRange,
                             ),
@@ -586,8 +601,8 @@ class _AdminDashboardState extends State<AdminDashboard> {
                         decoration: BoxDecoration(
                           color: kGoldPrimary.withOpacity(0.18),
                           borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                              color: kGoldPrimary, width: 1.3),
+                          border:
+                          Border.all(color: kGoldPrimary, width: 1.3),
                         ),
                         child: Text(
                           "View Details",

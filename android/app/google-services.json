@@ -1,13 +1,13 @@
 {
   "project_info": {
-    "project_number": "622393954012",
-    "project_id": "barber-barber-ef5aa",
-    "storage_bucket": "barber-barber-ef5aa.firebasestorage.app"
+    "project_number": "644872690769",
+    "project_id": "salon-manager-v2",
+    "storage_bucket": "salon-manager-v2.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:622393954012:android:db7247371e17912c4c6e19",
+        "mobilesdk_app_id": "1:644872690769:android:bc2b9201c12fa8d8f9ec70",
         "android_client_info": {
           "package_name": "com.example.salon_manager"
         }
@@ -15,7 +15,7 @@
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyB1L7PLS0iPLXLbivbVmCR9Pw7cXUzWi2A"
+          "current_key": "AIzaSyD80jgKltwuEv1uKXKZft2ilbsZ1WI9Qis"
         }
       ],
       "services": {
