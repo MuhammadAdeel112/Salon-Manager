@@ -20,23 +20,27 @@ dependencies:
   cloud_firestore: ^6.1.1
   image_picker: ^1.2.1
 
-  # State Management (Image flicker aur data handle karne ke liye)
+  # State Management
   provider: ^6.1.5+1
 
-  # Image flickering aur slow loading khatam karne ke liye naya package
+  # Image caching
   cached_network_image: ^3.4.1
 
-  # WhatsApp receipt share karne ke liye
+  # WhatsApp share
   share_plus: ^12.0.2
+
+  # ✅ Printing ke liye UPDATED packages
+  pdf: ^3.12.0
+  printing: ^5.14.3
+  unified_esc_pos_printer: ^3.2.0
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
-  # Icon generate karne ke liye naya package
   flutter_launcher_icons: ^0.14.4
 
-# Icon ki configuration
+# Icon configuration
 flutter_launcher_icons:
   android: "launcher_icon"
   ios: true
@@ -48,7 +52,6 @@ flutter_launcher_icons:
 flutter:
   uses-material-design: true
 
-  # Assets register yahan hote hain
   assets:
     - assets/icon.jpg.jpeg
     - assets/logo.png
