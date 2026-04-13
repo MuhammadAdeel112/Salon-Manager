@@ -4,7 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
 
-import 'Receipt printer.dart';
+import 'receipt_printer.dart';
 
 // ═══════════════════════════════════════════════════════════════
 // 📦 PACKAGES CATALOG WIDGET
@@ -35,8 +35,9 @@ class PackagesCatalog extends StatelessWidget {
           .where('isActive', isEqualTo: true)
           .snapshots(),
       builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting)
+        if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: Padding(padding: EdgeInsets.all(32), child: CircularProgressIndicator()));
+        }
 
         if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
           return Container(
@@ -44,9 +45,9 @@ class PackagesCatalog extends StatelessWidget {
             padding: const EdgeInsets.all(40),
             decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(24)),
             child: Center(child: Column(children: [
-              Icon(Icons.inventory_2_outlined, size: 44, color: kGoldPrimary.withOpacity(0.35)),
+              Icon(Icons.inventory_2_outlined, size: 44, color: kGoldPrimary.withValues(alpha: 0.35)),
               const SizedBox(height: 12),
-              Text("No packages available", style: TextStyle(color: kCharcoal.withOpacity(0.4), fontSize: 13, fontWeight: FontWeight.w600)),
+              Text("No packages available", style: TextStyle(color: kCharcoal.withValues(alpha: 0.4), fontSize: 13, fontWeight: FontWeight.w600)),
             ])),
           );
         }
@@ -85,14 +86,14 @@ class PackagesCatalog extends StatelessWidget {
                 decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: kGoldPrimary.withOpacity(0.3), width: 1.8),
-                    boxShadow: [BoxShadow(color: kGoldDark.withOpacity(0.07), blurRadius: 8, offset: const Offset(0, 4))]),
+                    border: Border.all(color: kGoldPrimary.withValues(alpha: 0.3), width: 1.8),
+                    boxShadow: [BoxShadow(color: kGoldDark.withValues(alpha: 0.07), blurRadius: 8, offset: const Offset(0, 4))]),
                 child: Row(children: [
                   Container(
                       width: isTablet ? 52 : 44,
                       height: isTablet ? 52 : 44,
                       decoration: BoxDecoration(color: const Color(0xFFF3F3F3), borderRadius: BorderRadius.circular(14)),
-                      child: Icon(Icons.inventory_2_rounded, color: kCharcoal.withOpacity(0.35), size: isTablet ? 24 : 20)),
+                      child: Icon(Icons.inventory_2_rounded, color: kCharcoal.withValues(alpha: 0.35), size: isTablet ? 24 : 20)),
                   const SizedBox(width: 14),
                   Expanded(
                     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -103,8 +104,8 @@ class PackagesCatalog extends StatelessWidget {
                         runSpacing: 4,
                         children: services.take(3).map((s) => Container(
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                          decoration: BoxDecoration(color: kCharcoal.withOpacity(0.06), borderRadius: BorderRadius.circular(20)),
-                          child: Text(s.toString(), style: TextStyle(fontSize: isTablet ? 10 : 9, color: kCharcoal.withOpacity(0.55), fontWeight: FontWeight.w600)),
+                          decoration: BoxDecoration(color: kCharcoal.withValues(alpha: 0.06), borderRadius: BorderRadius.circular(20)),
+                          child: Text(s.toString(), style: TextStyle(fontSize: isTablet ? 10 : 9, color: kCharcoal.withValues(alpha: 0.55), fontWeight: FontWeight.w600)),
                         )).toList(),
                       ),
                       if (services.length > 3)
@@ -219,7 +220,7 @@ class _MultiStaffPackageDialogState extends State<_MultiStaffPackageDialog> {
 
       WriteBatch batch = FirebaseFirestore.instance.batch();
       groupedByEmployee.forEach((staffName, assignedServices) {
-        double empTotal = assignedServices.fold(0, (sum, s) => sum + (s['price'] ?? 0.0));
+        double empTotal = assignedServices.fold(0, (total, s) => total + (s['price'] ?? 0.0));
         DocumentReference docRef = FirebaseFirestore.instance.collection('transactions').doc();
         batch.set(docRef, {
           'staffName': staffName,
@@ -277,7 +278,7 @@ class _MultiStaffPackageDialogState extends State<_MultiStaffPackageDialog> {
               child: Row(children: [
                 Container(
                   padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(color: const Color(0xFFF8E9B0).withOpacity(0.6), borderRadius: BorderRadius.circular(10)),
+                  decoration: BoxDecoration(color: const Color(0xFFF8E9B0).withValues(alpha: 0.6), borderRadius: BorderRadius.circular(10)),
                   child: const Icon(Icons.inventory_2_rounded, color: Color(0xFFAA8C2C), size: 20),
                 ),
                 const SizedBox(width: 12),
@@ -317,7 +318,7 @@ class _MultiStaffPackageDialogState extends State<_MultiStaffPackageDialog> {
                         if (selectedStaffName != null)
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                            decoration: BoxDecoration(color: const Color(0xFFD4AF37).withOpacity(0.15), borderRadius: BorderRadius.circular(8)),
+                            decoration: BoxDecoration(color: const Color(0xFFD4AF37).withValues(alpha: 0.15), borderRadius: BorderRadius.circular(8)),
                             child: Text(selectedStaffName, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFFAA8C2C))),
                           ),
                       ]),

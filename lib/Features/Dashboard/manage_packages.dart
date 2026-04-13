@@ -49,17 +49,17 @@ class ManagePackages extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Icon(Icons.inventory_2_outlined,
-                      size: 64, color: kGoldPrimary.withOpacity(0.4)),
+                      size: 64, color: kGoldPrimary.withValues(alpha: 0.4)),
                   const SizedBox(height: 16),
                   Text("No packages yet",
                       style: TextStyle(
-                          color: kCharcoal.withOpacity(0.5),
+                          color: kCharcoal.withValues(alpha: 0.5),
                           fontSize: 16,
                           fontWeight: FontWeight.w600)),
                   const SizedBox(height: 8),
                   Text("Tap + to add a package",
                       style: TextStyle(
-                          color: kCharcoal.withOpacity(0.35), fontSize: 13)),
+                          color: kCharcoal.withValues(alpha: 0.35), fontSize: 13)),
                 ],
               ),
             );
@@ -88,12 +88,12 @@ class ManagePackages extends StatelessWidget {
                   borderRadius: BorderRadius.circular(18),
                   border: Border.all(
                       color: isActive
-                          ? kGoldPrimary.withOpacity(0.3)
-                          : Colors.grey.withOpacity(0.2),
+                          ? kGoldPrimary.withValues(alpha: 0.3)
+                          : Colors.grey.withValues(alpha: 0.2),
                       width: 1.2),
                   boxShadow: [
                     BoxShadow(
-                        color: kGoldDark.withOpacity(0.07),
+                        color: kGoldDark.withValues(alpha: 0.07),
                         blurRadius: 10,
                         offset: const Offset(0, 4))
                   ],
@@ -108,7 +108,7 @@ class ManagePackages extends StatelessWidget {
                           Container(
                             padding: const EdgeInsets.all(8),
                             decoration: BoxDecoration(
-                              color: kGoldLight.withOpacity(0.6),
+                              color: kGoldLight.withValues(alpha: 0.6),
                               borderRadius: BorderRadius.circular(10),
                             ),
                             child: const Icon(Icons.inventory_2_rounded,
@@ -128,13 +128,13 @@ class ManagePackages extends StatelessWidget {
                                     "${services.length} service${services.length != 1 ? 's' : ''} included",
                                     style: TextStyle(
                                         fontSize: 11,
-                                        color: kCharcoal.withOpacity(0.5))),
+                                        color: kCharcoal.withValues(alpha: 0.5))),
                               ],
                             ),
                           ),
                           Switch(
                             value: isActive,
-                            activeColor: kGoldPrimary,
+                            activeThumbColor: kGoldPrimary,
                             onChanged: (val) {
                               FirebaseFirestore.instance
                                   .collection('packages')
@@ -153,7 +153,7 @@ class ManagePackages extends StatelessWidget {
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 10, vertical: 4),
                             decoration: BoxDecoration(
-                              color: kGoldLight.withOpacity(0.5),
+                              color: kGoldLight.withValues(alpha: 0.5),
                               borderRadius: BorderRadius.circular(20),
                             ),
                             child: Text(s.toString(),
@@ -576,7 +576,7 @@ class _PackageDialogWidgetState extends State<_PackageDialogWidget> {
                                 horizontal: 8, vertical: 3),
                             decoration: BoxDecoration(
                               color: ManagePackages.kGoldLight
-                                  .withOpacity(0.6),
+                                  .withValues(alpha: 0.6),
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Text(
@@ -653,7 +653,7 @@ class _PackageDialogWidgetState extends State<_PackageDialogWidget> {
                                     color: isSelected
                                         ? ManagePackages.kGoldDark
                                         : ManagePackages.kGoldLight
-                                        .withOpacity(0.4),
+                                        .withValues(alpha: 0.4),
                                     borderRadius:
                                     BorderRadius.circular(20),
                                     border: Border.all(
@@ -661,7 +661,7 @@ class _PackageDialogWidgetState extends State<_PackageDialogWidget> {
                                           ? ManagePackages.kGoldDark
                                           : ManagePackages
                                           .kGoldPrimary
-                                          .withOpacity(0.3),
+                                          .withValues(alpha: 0.3),
                                       width: 1.2,
                                     ),
                                   ),
@@ -704,11 +704,11 @@ class _PackageDialogWidgetState extends State<_PackageDialogWidget> {
                     Container(
                       padding: const EdgeInsets.all(14),
                       decoration: BoxDecoration(
-                        color: ManagePackages.kGoldLight.withOpacity(0.3),
+                        color: ManagePackages.kGoldLight.withValues(alpha: 0.3),
                         borderRadius: BorderRadius.circular(14),
                         border: Border.all(
                             color: ManagePackages.kGoldPrimary
-                                .withOpacity(0.3)),
+                                .withValues(alpha: 0.3)),
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,

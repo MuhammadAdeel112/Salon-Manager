@@ -3,11 +3,9 @@ import 'package:flutter/cupertino.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
-import '../../main.dart';
 import 'admin_provider.dart';
-import '../Auth/admin_login.dart';
-import '../Employee/view/employee_detail_screen.dart';
-import '../Employee/expances/expance_history.dart';
+import '../employee/view/employee_detail_screen.dart';
+import '../employee/expances/expance_history.dart';
 import 'employee/manage_employee.dart';
 import 'manage_services.dart';
 import 'logout_dialog.dart';
@@ -51,7 +49,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
           return DateTime(int.parse(parts[0]), int.parse(parts[1]),
               int.parse(parts[2]));
         }
-      } catch (e) {}
+      } catch (_) {}
       return null;
     }
   }
@@ -232,11 +230,11 @@ class _AdminDashboardState extends State<AdminDashboard> {
             border: Border.all(
                 color: isSel
                     ? kCharcoal
-                    : kGoldPrimary.withOpacity(0.3)),
+                    : kGoldPrimary.withValues(alpha: 0.3)),
             boxShadow: isSel
                 ? [
               BoxShadow(
-                  color: kGoldDark.withOpacity(0.2),
+                  color: kGoldDark.withValues(alpha: 0.2),
                   blurRadius: 4,
                   offset: const Offset(0, 2))
             ]
@@ -269,7 +267,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-                color: textCol.withOpacity(0.12),
+                color: textCol.withValues(alpha: 0.12),
                 blurRadius: 6,
                 offset: const Offset(0, 3))
           ],
@@ -288,7 +286,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
             Text(
               title,
               style: TextStyle(
-                color: textCol.withOpacity(0.9),
+                color: textCol.withValues(alpha: 0.9),
                 fontSize: isTablet ? 13 : 11,
                 fontWeight: FontWeight.w600,
               ),
@@ -327,10 +325,10 @@ class _AdminDashboardState extends State<AdminDashboard> {
               decoration: BoxDecoration(
                 color: kWhite,
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: col.withOpacity(0.2), width: 1.5),
+                border: Border.all(color: col.withValues(alpha: 0.2), width: 1.5),
                 boxShadow: [
                   BoxShadow(
-                      color: kGoldDark.withOpacity(0.08),
+                      color: kGoldDark.withValues(alpha: 0.08),
                       blurRadius: 10,
                       offset: const Offset(0, 4))
                 ],
@@ -364,7 +362,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: kGoldDark.withOpacity(0.10),
+            color: kGoldDark.withValues(alpha: 0.10),
             blurRadius: 14,
             offset: const Offset(0, 6),
           ),
@@ -379,14 +377,15 @@ class _AdminDashboardState extends State<AdminDashboard> {
             columnSpacing: isTablet ? 24 : 16,
             horizontalMargin: isTablet ? 20 : 12,
             headingRowHeight: isTablet ? 52 : 44,
-            dataRowHeight: isTablet ? 72 : 60,
-            headingRowColor: MaterialStateProperty.all(
-                kGoldLight.withOpacity(0.45)),
+            dataRowMinHeight: isTablet ? 72 : 60,
+            dataRowMaxHeight: isTablet ? 72 : 60,
+            headingRowColor: WidgetStateProperty.all(
+                kGoldLight.withValues(alpha: 0.45)),
             border: TableBorder(
               horizontalInside: BorderSide(
-                  color: kGoldLight.withOpacity(0.5), width: 0.8),
+                  color: kGoldLight.withValues(alpha: 0.5), width: 0.8),
               verticalInside: BorderSide(
-                  color: kGoldLight.withOpacity(0.3), width: 0.8),
+                  color: kGoldLight.withValues(alpha: 0.3), width: 0.8),
               bottom: BorderSide.none,
               top: BorderSide.none,
             ),
@@ -485,7 +484,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                       children: [
                         CircleAvatar(
                           radius: isTablet ? 20 : 16,
-                          backgroundColor: kGoldPrimary.withOpacity(0.25),
+                          backgroundColor: kGoldPrimary.withValues(alpha: 0.25),
                           child: Text(
                             name.isNotEmpty ? name[0].toUpperCase() : "?",
                             style: TextStyle(
@@ -528,7 +527,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                           width: isTablet ? 100 : 70,
                           height: 8,
                           decoration: BoxDecoration(
-                            color: kGoldLight.withOpacity(0.6),
+                            color: kGoldLight.withValues(alpha: 0.6),
                             borderRadius: BorderRadius.circular(4),
                           ),
                           child: FractionallySizedBox(
@@ -599,7 +598,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                           vertical: isTablet ? 10 : 7,
                         ),
                         decoration: BoxDecoration(
-                          color: kGoldPrimary.withOpacity(0.18),
+                          color: kGoldPrimary.withValues(alpha: 0.18),
                           borderRadius: BorderRadius.circular(12),
                           border:
                           Border.all(color: kGoldPrimary, width: 1.3),

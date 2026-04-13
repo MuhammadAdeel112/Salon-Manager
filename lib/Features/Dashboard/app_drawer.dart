@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../Employee/expances/expance_history.dart';
+import '../employee/expances/expance_history.dart';
 import 'employee/manage_employee.dart';
 import 'manage_packages.dart';
 import 'manage_services.dart'; // ← Packages screen (baad mein banayenge)
@@ -45,7 +45,7 @@ class AppDrawer extends StatelessWidget {
                 children: [
                   CircleAvatar(
                     radius: 30,
-                    backgroundColor: kGoldPrimary.withOpacity(0.2),
+                    backgroundColor: kGoldPrimary.withValues(alpha: 0.2),
                     child: const Icon(Icons.person_rounded,
                         color: kGoldPrimary, size: 32),
                   ),
@@ -61,7 +61,7 @@ class AppDrawer extends StatelessWidget {
                   Text(
                     "Barber Pro",
                     style: TextStyle(
-                        color: Colors.white.withOpacity(0.6),
+                        color: Colors.white.withValues(alpha: 0.6),
                         fontSize: 12),
                   ),
                 ],
@@ -122,7 +122,7 @@ class AppDrawer extends StatelessWidget {
               padding: const EdgeInsets.symmetric(
                   horizontal: 16, vertical: 8),
               child: Divider(
-                  color: kGoldPrimary.withOpacity(0.2), thickness: 1),
+                  color: kGoldPrimary.withValues(alpha: 0.2), thickness: 1),
             ),
 
             // ── Packages ──
@@ -149,7 +149,7 @@ class AppDrawer extends StatelessWidget {
               child: Text(
                 "Barber Pro v1.0",
                 style: TextStyle(
-                    color: kCharcoal.withOpacity(0.3),
+                    color: kCharcoal.withValues(alpha: 0.3),
                     fontSize: 11),
               ),
             ),
@@ -173,8 +173,8 @@ class AppDrawer extends StatelessWidget {
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
           color: isHighlighted
-              ? kGoldPrimary.withOpacity(0.15)
-              : kGoldLight.withOpacity(0.4),
+              ? kGoldPrimary.withValues(alpha: 0.15)
+              : kGoldLight.withValues(alpha: 0.4),
           borderRadius: BorderRadius.circular(10),
         ),
         child: Icon(
@@ -195,8 +195,8 @@ class AppDrawer extends StatelessWidget {
       trailing: Icon(
         Icons.chevron_right_rounded,
         color: isHighlighted
-            ? kGoldDark.withOpacity(0.5)
-            : kCharcoal.withOpacity(0.3),
+            ? kGoldDark.withValues(alpha: 0.5)
+            : kCharcoal.withValues(alpha: 0.3),
         size: 18,
       ),
       onTap: onTap,

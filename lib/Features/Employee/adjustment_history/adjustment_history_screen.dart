@@ -78,12 +78,12 @@ class AdjustmentHistoryScreen extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(15),
-                    boxShadow: [BoxShadow(color: itemColor.withOpacity(0.1), blurRadius: 10)],
+                    boxShadow: [BoxShadow(color: itemColor.withValues(alpha: 0.1), blurRadius: 10)],
                   ),
                   child: ListTile(
                     contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     leading: CircleAvatar(
-                      backgroundColor: itemColor.withOpacity(0.1),
+                      backgroundColor: itemColor.withValues(alpha: 0.1),
                       child: Icon(
                         isAdvance ? Icons.arrow_upward_rounded : Icons.arrow_downward_rounded,
                         color: itemColor,
@@ -156,12 +156,12 @@ class AdjustmentHistoryScreen extends StatelessWidget {
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(15),
-                        boxShadow: [BoxShadow(color: kGoldPrimary.withOpacity(0.1), blurRadius: 10)],
+                        boxShadow: [BoxShadow(color: kGoldPrimary.withValues(alpha: 0.1), blurRadius: 10)],
                       ),
                       child: ListTile(
                         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                         leading: CircleAvatar(
-                          backgroundColor: kGoldPrimary.withOpacity(0.1),
+                          backgroundColor: kGoldPrimary.withValues(alpha: 0.1),
                           child: Icon(Icons.payments_outlined, color: kGoldPrimary),
                         ),
                         title: Text("Salary Paid", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: kCharcoal)),

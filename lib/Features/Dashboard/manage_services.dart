@@ -28,6 +28,7 @@ class ManageServices extends StatelessWidget {
             style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent, elevation: 0),
             onPressed: () async {
               await FirebaseFirestore.instance.collection('services').doc(docId).delete();
+              if (!context.mounted) return;
               Navigator.pop(context);
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
@@ -83,7 +84,7 @@ class ManageServices extends StatelessWidget {
                   color: kWhite,
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: [
-                    BoxShadow(color: kGoldDark.withOpacity(0.08), blurRadius: 10, offset: const Offset(0, 4))
+                    BoxShadow(color: kGoldDark.withValues(alpha: 0.08), blurRadius: 10, offset: const Offset(0, 4))
                   ],
                 ),
                 child: ListTile(
@@ -110,7 +111,7 @@ class ManageServices extends StatelessWidget {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                         decoration: BoxDecoration(
-                          color: kGoldPrimary.withOpacity(0.15),
+                          color: kGoldPrimary.withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text("PKR $sPrice",
@@ -181,6 +182,7 @@ class ManageServices extends StatelessWidget {
                     });
                     nameController.clear();
                     priceController.clear();
+                    if (!context.mounted) return;
                     Navigator.pop(context);
                   }
                 },

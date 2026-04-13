@@ -63,7 +63,7 @@ class EmployeeDetailsProvider with ChangeNotifier {
       }
       notifyListeners();
     } catch (e) {
-      print("Error checking payment status: $e");
+      debugPrint("Error checking payment status: $e");
     }
   }
 
@@ -174,7 +174,7 @@ class EmployeeDetailsProvider with ChangeNotifier {
       return true; // ✅ Success
 
     } catch (e) {
-      print("Error calculating previous month payroll: $e");
+      debugPrint("Error calculating previous month payroll: $e");
       isPrevMonthLoaded = false;
       isPrevMonthError = true;
       notifyListeners();

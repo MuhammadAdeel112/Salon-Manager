@@ -74,8 +74,9 @@ class AdminProvider extends ChangeNotifier {
       String cleanDate = docDate.trim();
 
       if (selectedFilter == "Daily") return cleanDate == todayDate;
-      if (selectedFilter == "Monthly")
+      if (selectedFilter == "Monthly") {
         return cleanDate.startsWith(currentMonthStr);
+      }
       if (selectedFilter == "Custom" && customRange != null) {
         try {
           DateTime dt = DateTime.parse(cleanDate);
@@ -229,7 +230,7 @@ class AdminProvider extends ChangeNotifier {
       await batch.commit();
       notifyListeners();
     } catch (e) {
-      print("Error in markSalaryAsPaid: $e");
+      debugPrint("Error in markSalaryAsPaid: $e");
       rethrow;
     }
   }

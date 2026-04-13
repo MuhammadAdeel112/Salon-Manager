@@ -131,8 +131,8 @@ class ServicesCatalog extends StatelessWidget {
                   decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: kGoldPrimary.withOpacity(0.35), width: 1.5),
-                      boxShadow: [BoxShadow(color: kGoldDark.withOpacity(0.06), blurRadius: 8, offset: const Offset(0, 3))]),
+                      border: Border.all(color: kGoldPrimary.withValues(alpha: 0.35), width: 1.5),
+                      boxShadow: [BoxShadow(color: kGoldDark.withValues(alpha: 0.06), blurRadius: 8, offset: const Offset(0, 3))]),
                   child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
                     Container(
                         width: isTablet ? 38 : 32,
@@ -157,7 +157,7 @@ class ServicesCatalog extends StatelessWidget {
                 decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(16),
-                    boxShadow: [BoxShadow(color: kGoldDark.withOpacity(0.07), blurRadius: 8, offset: const Offset(0, 3))]),
+                    boxShadow: [BoxShadow(color: kGoldDark.withValues(alpha: 0.07), blurRadius: 8, offset: const Offset(0, 3))]),
                 child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
                   Padding(
                     padding: EdgeInsets.symmetric(horizontal: isTablet ? 8 : 5),

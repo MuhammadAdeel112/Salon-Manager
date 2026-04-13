@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
 import 'package:share_plus/share_plus.dart';
-import '../../Dashboard/admin_provider.dart';
+import '../../dashboard/admin_provider.dart';
 import 'employee_detail_provider.dart';
 
 class EmployeeDetailsScreen extends StatelessWidget {
@@ -86,10 +86,11 @@ class EmployeeDetailsScreen extends StatelessWidget {
                 if (baseSalary == 0 && commRate == 0) {
                   double oldVal =
                   (data['commission'] ?? data['value'] ?? 0).toDouble();
-                  if (empType == "Commission")
+                  if (empType == "Commission") {
                     commRate = oldVal;
-                  else
+                  } else {
                     baseSalary = oldVal;
+                  }
                 }
                 break;
               }
@@ -179,7 +180,7 @@ class EmployeeDetailsScreen extends StatelessWidget {
             bottomLeft: Radius.circular(30),
             bottomRight: Radius.circular(30)),
         boxShadow: [
-          BoxShadow(color: kGoldDark.withOpacity(0.1), blurRadius: 10)
+          BoxShadow(color: kGoldDark.withValues(alpha: 0.1), blurRadius: 10)
         ],
       ),
       padding: const EdgeInsets.fromLTRB(20, 10, 20, 25),
@@ -220,7 +221,7 @@ class EmployeeDetailsScreen extends StatelessWidget {
               borderRadius: BorderRadius.circular(15),
               boxShadow: [
                 BoxShadow(
-                    color: kGoldDark.withOpacity(0.3),
+                    color: kGoldDark.withValues(alpha: 0.3),
                     blurRadius: 8,
                     offset: const Offset(0, 4))
               ],
@@ -233,7 +234,7 @@ class EmployeeDetailsScreen extends StatelessWidget {
                   children: [
                     Text("NET SETTLEMENT",
                         style: TextStyle(
-                            color: kWhite.withOpacity(0.7),
+                            color: kWhite.withValues(alpha: 0.7),
                             fontWeight: FontWeight.bold,
                             fontSize: 10)),
                     const Text("Final Take Home",
@@ -303,7 +304,7 @@ class EmployeeDetailsScreen extends StatelessWidget {
               backgroundColor: kGoldDark,
               foregroundColor: kWhite,
               elevation: 5,
-              shadowColor: kGoldDark.withOpacity(0.3),
+              shadowColor: kGoldDark.withValues(alpha: 0.3),
               minimumSize: const Size(double.infinity, 55),
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(15)),
@@ -349,7 +350,7 @@ class EmployeeDetailsScreen extends StatelessWidget {
             borderRadius: BorderRadius.circular(15),
             boxShadow: [
               BoxShadow(
-                  color: Colors.green.withOpacity(0.3),
+                  color: Colors.green.withValues(alpha: 0.3),
                   blurRadius: 8,
                   offset: const Offset(0, 4))
             ],
@@ -373,7 +374,7 @@ class EmployeeDetailsScreen extends StatelessWidget {
                               letterSpacing: 1)),
                       Text(displayMonth,
                           style: TextStyle(
-                              color: Colors.white.withOpacity(0.8),
+                              color: Colors.white.withValues(alpha: 0.8),
                               fontSize: 11)),
                     ],
                   ),
@@ -483,10 +484,10 @@ class EmployeeDetailsScreen extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(
                         horizontal: 12, vertical: 4),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFD4AF37).withOpacity(0.15),
+                      color: const Color(0xFFD4AF37).withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(
-                          color: const Color(0xFFD4AF37).withOpacity(0.4)),
+                          color: const Color(0xFFD4AF37).withValues(alpha: 0.4)),
                     ),
                     child: Text(
                       "📅 Accounting: $displayMonth",
@@ -608,7 +609,7 @@ class EmployeeDetailsScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 20),
                   DropdownButtonFormField<String>(
-                    value: selectedMethod,
+                    initialValue: selectedMethod,
                     decoration: InputDecoration(
                         labelText: "Payment Method",
                         border: OutlineInputBorder(
@@ -753,7 +754,7 @@ class EmployeeDetailsScreen extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: Colors.green.withOpacity(0.1),
+                color: Colors.green.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               child: const Icon(Icons.check_circle_rounded,
@@ -817,6 +818,7 @@ class EmployeeDetailsScreen extends StatelessWidget {
         "━━━━━━━━━━━━━━━━━━━━\n"
         "✂️ Barber Pro - Staff Management";
 
+    // ignore: deprecated_member_use
     Share.share(message, subject: "Salary Receipt - $staffName");
   }
 
@@ -866,9 +868,9 @@ class EmployeeDetailsScreen extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-            color: col.withOpacity(0.05),
+            color: col.withValues(alpha: 0.05),
             borderRadius: BorderRadius.circular(15),
-            border: Border.all(color: col.withOpacity(0.1))),
+            border: Border.all(color: col.withValues(alpha: 0.1))),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -896,9 +898,9 @@ class EmployeeDetailsScreen extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-              color: col.withOpacity(0.05),
+              color: col.withValues(alpha: 0.05),
               borderRadius: BorderRadius.circular(15),
-              border: Border.all(color: col.withOpacity(0.1))),
+              border: Border.all(color: col.withValues(alpha: 0.1))),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -1003,7 +1005,7 @@ class EmployeeDetailsScreen extends StatelessWidget {
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-                color: kGoldDark.withOpacity(0.1), blurRadius: 5)
+                color: kGoldDark.withValues(alpha: 0.1), blurRadius: 5)
           ]),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1033,10 +1035,10 @@ class EmployeeDetailsScreen extends StatelessWidget {
                 child: Container(
                   padding: const EdgeInsets.all(6),
                   decoration: BoxDecoration(
-                    color: Colors.red.withOpacity(0.08),
+                    color: Colors.red.withValues(alpha: 0.08),
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(
-                        color: Colors.red.withOpacity(0.25)),
+                        color: Colors.red.withValues(alpha: 0.25)),
                   ),
                   child: const Icon(Icons.delete_outline_rounded,
                       color: Colors.red, size: 18),
@@ -1080,7 +1082,7 @@ class EmployeeDetailsScreen extends StatelessWidget {
                         shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                             side: BorderSide(
-                                color: kGoldPrimary.withOpacity(0.5))),
+                                color: kGoldPrimary.withValues(alpha: 0.5))),
                         padding:
                         const EdgeInsets.symmetric(vertical: 12)),
                     onPressed: () =>
@@ -1106,7 +1108,7 @@ class EmployeeDetailsScreen extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: Colors.red.withOpacity(0.1),
+                color: Colors.red.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: const Icon(Icons.delete_forever_rounded,
@@ -1323,7 +1325,7 @@ class EmployeeDetailsScreen extends StatelessWidget {
                             child: Container(
                               padding: const EdgeInsets.all(8),
                               decoration: BoxDecoration(
-                                  color: Colors.red.withOpacity(0.08),
+                                  color: Colors.red.withValues(alpha: 0.08),
                                   borderRadius: BorderRadius.circular(8)),
                               child: const Icon(
                                   Icons.delete_outline_rounded,
@@ -1464,8 +1466,9 @@ class AdjustmentHistoryScreen extends StatelessWidget {
                     (data['type'] ?? "Advance") == "Advance";
                 DateTime? date;
                 try {
-                  if (data['date'] != null)
+                  if (data['date'] != null) {
                     date = DateTime.tryParse(data['date'].toString());
+                  }
                 } catch (_) {}
                 final DateTime displayDate = date ?? DateTime.now();
                 Color itemColor =
@@ -1477,12 +1480,12 @@ class AdjustmentHistoryScreen extends StatelessWidget {
                       borderRadius: BorderRadius.circular(15),
                       boxShadow: [
                         BoxShadow(
-                            color: itemColor.withOpacity(0.1),
+                            color: itemColor.withValues(alpha: 0.1),
                             blurRadius: 10)
                       ]),
                   child: ListTile(
                     leading: CircleAvatar(
-                        backgroundColor: itemColor.withOpacity(0.1),
+                        backgroundColor: itemColor.withValues(alpha: 0.1),
                         child: Icon(
                             isAdvance
                                 ? Icons.arrow_upward_rounded
@@ -1531,13 +1534,15 @@ class AdjustmentHistoryScreen extends StatelessWidget {
                   .where('employeeName', isEqualTo: staffName.trim())
                   .snapshots(),
               builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting)
+                if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());
-                if (!snapshot.hasData || snapshot.data!.docs.isEmpty)
+                }
+                if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
                   return const Padding(
                       padding: EdgeInsets.all(20),
                       child:
                       Center(child: Text("No payout record found.")));
+                }
                 List<QueryDocumentSnapshot> docs = snapshot.data!.docs;
                 docs.sort((a, b) {
                   final dataA = a.data() as Map<String, dynamic>;
@@ -1563,12 +1568,12 @@ class AdjustmentHistoryScreen extends StatelessWidget {
                           borderRadius: BorderRadius.circular(15),
                           boxShadow: [
                             BoxShadow(
-                                color: kGoldPrimary.withOpacity(0.1),
+                                color: kGoldPrimary.withValues(alpha: 0.1),
                                 blurRadius: 10)
                           ]),
                       child: ListTile(
                         leading: CircleAvatar(
-                            backgroundColor: kGoldPrimary.withOpacity(0.1),
+                            backgroundColor: kGoldPrimary.withValues(alpha: 0.1),
                             child: const Icon(Icons.payments_outlined,
                                 color: kGoldPrimary)),
                         title: Text("Salary Disbursed ✓",

@@ -3,16 +3,16 @@ import 'package:flutter/services.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
-import 'Packages catalog.dart';
-import 'Receipt printer.dart';
-import 'Services catalog.dart';
+import 'packages_catalog.dart';
+import 'receipt_printer.dart';
+import 'services_catalog.dart';
 import 'entry_provider.dart';
 
 class StaffEntryScreen extends StatefulWidget {
   const StaffEntryScreen({super.key});
 
   @override
-  _StaffEntryScreenState createState() => _StaffEntryScreenState();
+  State<StaffEntryScreen> createState() => _StaffEntryScreenState();
 }
 
 class _StaffEntryScreenState extends State<StaffEntryScreen>
@@ -102,12 +102,16 @@ class _StaffEntryScreenState extends State<StaffEntryScreen>
   Future<void> _submitExpense(EntryProvider provider) async {
     if (_expAmountController.text.trim().isEmpty) return;
 
-    FirebaseFirestore.instance.collection('expenses').add({
-      'amount': double.tryParse(_expAmountController.text) ?? 0,
-      'description': _expNoteController.text.trim(),
-      'dateOnly': DateFormat('yyyy-MM-dd').format(_selectedDate),
-      'timestamp': FieldValue.serverTimestamp(),
-    }).catchError((e) => debugPrint("Expense sync error: $e"));
+    try {
+      await FirebaseFirestore.instance.collection('expenses').add({
+        'amount': double.tryParse(_expAmountController.text) ?? 0,
+        'description': _expNoteController.text.trim(),
+        'dateOnly': DateFormat('yyyy-MM-dd').format(_selectedDate),
+        'timestamp': FieldValue.serverTimestamp(),
+      });
+    } catch (e) {
+      debugPrint("Expense sync error: $e");
+    }
 
     _expAmountController.clear();
     _expNoteController.clear();
@@ -206,7 +210,7 @@ class _StaffEntryScreenState extends State<StaffEntryScreen>
               Row(children: [
                 Container(
                   padding: const EdgeInsets.all(3),
-                  decoration: BoxDecoration(color: kWhite.withOpacity(0.25), shape: BoxShape.circle),
+                  decoration: BoxDecoration(color: kWhite.withValues(alpha: 0.25), shape: BoxShape.circle),
                   child: CircleAvatar(
                     radius: isTablet ? 28 : 20,
                     backgroundColor: kWhite,
@@ -217,16 +221,16 @@ class _StaffEntryScreenState extends State<StaffEntryScreen>
                 Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                   Text(
                     DateFormat('EEEE, dd MMM').format(_selectedDate).toUpperCase(),
-                    style: TextStyle(color: kWhite.withOpacity(0.85), fontSize: isTablet ? 13 : 10, fontWeight: FontWeight.w600, letterSpacing: 1),
+                    style: TextStyle(color: kWhite.withValues(alpha: 0.85), fontSize: isTablet ? 13 : 10, fontWeight: FontWeight.w600, letterSpacing: 1),
                   ),
                   Text("Counter Entry",
                       style: TextStyle(
                           color: kWhite, fontSize: isTablet ? 26 : 19, fontWeight: FontWeight.w900, letterSpacing: 0.6,
-                          shadows: [Shadow(color: kCharcoal.withOpacity(0.3), blurRadius: 6)])),
+                          shadows: [Shadow(color: kCharcoal.withValues(alpha: 0.3), blurRadius: 6)])),
                 ]),
               ]),
               Container(
-                decoration: BoxDecoration(color: kWhite.withOpacity(0.18), borderRadius: BorderRadius.circular(14)),
+                decoration: BoxDecoration(color: kWhite.withValues(alpha: 0.18), borderRadius: BorderRadius.circular(14)),
                 child: IconButton(
                   onPressed: () async {
                     final picked = await showDatePicker(
@@ -258,7 +262,7 @@ class _StaffEntryScreenState extends State<StaffEntryScreen>
       decoration: BoxDecoration(
         color: kWhite,
         borderRadius: BorderRadius.circular(28),
-        boxShadow: [BoxShadow(color: kGoldDark.withOpacity(0.12), blurRadius: 20, offset: const Offset(0, 10))],
+        boxShadow: [BoxShadow(color: kGoldDark.withValues(alpha: 0.12), blurRadius: 20, offset: const Offset(0, 10))],
       ),
       child: Column(
         children: [
@@ -295,7 +299,7 @@ class _StaffEntryScreenState extends State<StaffEntryScreen>
                   return Padding(
                     padding: const EdgeInsets.only(right: 8),
                     child: Chip(
-                      backgroundColor: kGoldLight.withOpacity(0.7),
+                      backgroundColor: kGoldLight.withValues(alpha: 0.7),
                       padding: EdgeInsets.symmetric(horizontal: isTablet ? 12 : 6, vertical: 2),
                       label: Text("${s['name']} • Rs ${(s['price'] as double).round()}",
                           style: TextStyle(color: kGoldDark, fontWeight: FontWeight.w700, fontSize: isTablet ? 12 : 10)),
@@ -342,9 +346,9 @@ class _StaffEntryScreenState extends State<StaffEntryScreen>
         padding: EdgeInsets.all(isTablet ? 14 : 10),
         decoration: BoxDecoration(
           gradient: LinearGradient(
-              colors: provider.isExpenseMode ? [Colors.red.shade700, Colors.red.shade500] : [kCharcoal, kCharcoal.withOpacity(0.9)]),
+              colors: provider.isExpenseMode ? [Colors.red.shade700, Colors.red.shade500] : [kCharcoal, kCharcoal.withValues(alpha: 0.9)]),
           borderRadius: BorderRadius.circular(20),
-          boxShadow: [BoxShadow(color: (provider.isExpenseMode ? Colors.red : kGoldDark).withOpacity(0.4), blurRadius: 12, offset: const Offset(0, 6))],
+          boxShadow: [BoxShadow(color: (provider.isExpenseMode ? Colors.red : kGoldDark).withValues(alpha: 0.4), blurRadius: 12, offset: const Offset(0, 6))],
         ),
         child: Icon(provider.isExpenseMode ? Icons.content_cut_rounded : Icons.receipt_long_rounded, color: kWhite, size: isTablet ? 26 : 22),
       ),
@@ -357,7 +361,7 @@ class _StaffEntryScreenState extends State<StaffEntryScreen>
       decoration: BoxDecoration(
           color: kWhite,
           borderRadius: BorderRadius.circular(28),
-          boxShadow: [BoxShadow(color: Colors.red.withOpacity(0.10), blurRadius: 24, offset: const Offset(0, 12))]),
+          boxShadow: [BoxShadow(color: Colors.red.withValues(alpha: 0.10), blurRadius: 24, offset: const Offset(0, 12))]),
       child: Column(children: [
         TextField(
             controller: _expAmountController,
@@ -422,7 +426,7 @@ class _StaffEntryScreenState extends State<StaffEntryScreen>
             color: kWhite,
             borderRadius: BorderRadius.circular(20),
             border: Border.all(color: kGoldLight),
-            boxShadow: [BoxShadow(color: kGoldDark.withOpacity(0.06), blurRadius: 10)],
+            boxShadow: [BoxShadow(color: kGoldDark.withValues(alpha: 0.06), blurRadius: 10)],
           ),
           child: TextField(
             controller: _clientNameController,
@@ -459,7 +463,7 @@ class _StaffEntryScreenState extends State<StaffEntryScreen>
       decoration: BoxDecoration(
           color: kWhite,
           borderRadius: BorderRadius.circular(30),
-          boxShadow: [BoxShadow(color: kGoldDark.withOpacity(0.10), blurRadius: 8, offset: const Offset(0, 2))]),
+          boxShadow: [BoxShadow(color: kGoldDark.withValues(alpha: 0.10), blurRadius: 8, offset: const Offset(0, 2))]),
       child: Row(mainAxisSize: MainAxisSize.min, children: [
         _togglePill("Services", !_showPackages, isTablet),
         _togglePill("Packages", _showPackages, isTablet),
@@ -476,7 +480,7 @@ class _StaffEntryScreenState extends State<StaffEntryScreen>
         padding: EdgeInsets.symmetric(horizontal: isTablet ? 18 : 14, vertical: isTablet ? 8 : 6),
         decoration: BoxDecoration(color: isSelected ? kCharcoal : Colors.transparent, borderRadius: BorderRadius.circular(26)),
         child: Text(label,
-            style: TextStyle(fontSize: isTablet ? 13 : 11, fontWeight: FontWeight.w700, color: isSelected ? kGoldPrimary : kCharcoal.withOpacity(0.38))),
+            style: TextStyle(fontSize: isTablet ? 13 : 11, fontWeight: FontWeight.w700, color: isSelected ? kGoldPrimary : kCharcoal.withValues(alpha: 0.38))),
       ),
     );
   }
@@ -512,7 +516,7 @@ class _StaffEntryScreenState extends State<StaffEntryScreen>
                       decoration: BoxDecoration(
                           shape: BoxShape.circle,
                           gradient: selected ? LinearGradient(colors: [kGoldPrimary, kGoldDark]) : null,
-                          boxShadow: selected ? [BoxShadow(color: kGoldPrimary.withOpacity(0.6), blurRadius: 16, spreadRadius: 4)] : null),
+                          boxShadow: selected ? [BoxShadow(color: kGoldPrimary.withValues(alpha: 0.6), blurRadius: 16, spreadRadius: 4)] : null),
                       child: CircleAvatar(
                           radius: avatarRadius,
                           backgroundColor: kWhite,
@@ -542,7 +546,7 @@ class _StaffEntryScreenState extends State<StaffEntryScreen>
           color: kWhite,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(color: kGoldLight),
-          boxShadow: [BoxShadow(color: kGoldDark.withOpacity(0.06), blurRadius: 10)]),
+          boxShadow: [BoxShadow(color: kGoldDark.withValues(alpha: 0.06), blurRadius: 10)]),
       child: TextField(
           controller: _searchController,
           onChanged: (val) => setState(() => _searchText = val),

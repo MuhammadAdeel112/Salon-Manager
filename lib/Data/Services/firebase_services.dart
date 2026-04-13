@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 import '../models/transaction_model.dart';
 
 class FirebaseService {
@@ -9,7 +10,7 @@ class FirebaseService {
     try {
       await _db.collection('transactions').add(transaction.toMap());
     } catch (e) {
-      print("Error saving transaction: $e");
+      debugPrint("Error saving transaction: $e");
       rethrow;
     }
   }

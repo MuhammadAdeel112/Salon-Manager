@@ -122,7 +122,7 @@ class _ManageEmployeesState extends State<ManageEmployees> {
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(16),
-                  boxShadow: [BoxShadow(color: kGoldDark.withOpacity(0.08), blurRadius: 10, offset: const Offset(0, 4))],
+                  boxShadow: [BoxShadow(color: kGoldDark.withValues(alpha: 0.08), blurRadius: 10, offset: const Offset(0, 4))],
                 ),
                 child: Padding(
                   padding: const EdgeInsets.all(12),
@@ -151,7 +151,7 @@ class _ManageEmployeesState extends State<ManageEmployees> {
                                 children: [
                                   Container(
                                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                    decoration: BoxDecoration(color: kGoldPrimary.withOpacity(0.1), borderRadius: BorderRadius.circular(6)),
+                                    decoration: BoxDecoration(color: kGoldPrimary.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(6)),
                                     child: Text(type, style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: kGoldDark)),
                                   ),
                                   const SizedBox(width: 8),
@@ -177,7 +177,7 @@ class _ManageEmployeesState extends State<ManageEmployees> {
                               return Transform.scale(
                                 scale: 0.8,
                                 child: Switch(
-                                  activeColor: kGoldPrimary,
+                                  activeThumbColor: kGoldPrimary,
                                   value: active,
                                   onChanged: (val) => provider.toggleStatus(emp.id, val),
                                 ),
@@ -276,7 +276,7 @@ class _ManageEmployeesState extends State<ManageEmployees> {
                     _buildTextField(_nameController, "Full Name", Icons.person_outline),
                     const SizedBox(height: 16),
                     DropdownButtonFormField(
-                      value: _empType,
+                      initialValue: _empType,
                       items: ["Commission", "Fixed Salary", "Both"].map((e) => DropdownMenuItem(value: e, child: Text(e, style: TextStyle(color: kCharcoal)))).toList(),
                       onChanged: (val) {
                         setModalState(() => _empType = val.toString());

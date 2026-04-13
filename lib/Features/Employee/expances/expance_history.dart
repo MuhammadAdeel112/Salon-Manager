@@ -92,7 +92,7 @@ class ExpenseHistoryScreen extends StatelessWidget {
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 elevation: 0,
                 color: Colors.white,
-                shadowColor: kGoldDark.withOpacity(0.1),
+                shadowColor: kGoldDark.withValues(alpha: 0.1),
                 child: ListTile(
                   leading: CircleAvatar(
                     backgroundColor: kGoldLight,

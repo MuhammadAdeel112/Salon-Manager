@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import '../Dashboard/admin_dashboard.dart';
+import '../dashboard/admin_dashboard.dart';
 import 'forget_password.dart';
 
 class AdminLoginPage extends StatefulWidget {
@@ -23,7 +23,6 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
   // Golden/Amber palette
   static const Color kGold = Color(0xFFFFC107);
   static const Color kGoldDark = Color(0xFFFFA000);
-  static const Color kGoldLight = Color(0xFFFFECB3);
   static const Color kTextDark = Color(0xFF212121);
 
   void _handleLogin() async {
@@ -83,12 +82,12 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
               child: Container(
                 padding: const EdgeInsets.fromLTRB(32, 40, 32, 36),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.42),
+                  color: Colors.white.withValues(alpha: 0.42),
                   borderRadius: BorderRadius.circular(36),
-                  border: Border.all(color: Colors.white.withOpacity(0.55), width: 1.8),
+                  border: Border.all(color: Colors.white.withValues(alpha: 0.55), width: 1.8),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.10),
+                      color: Colors.black.withValues(alpha: 0.10),
                       blurRadius: 30,
                       spreadRadius: 2,
                       offset: const Offset(0, 15),
@@ -102,7 +101,7 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
                       width: 80,
                       height: 80,
                       decoration: BoxDecoration(
-                        color: kGold.withOpacity(0.25),
+                        color: kGold.withValues(alpha: 0.25),
                         shape: BoxShape.circle,
                         border: Border.all(color: kGold, width: 2.5),
                       ),
@@ -175,7 +174,7 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
                           backgroundColor: kGold,
                           foregroundColor: Colors.black87,
                           elevation: 6,
-                          shadowColor: kGoldDark.withOpacity(0.5),
+                          shadowColor: kGoldDark.withValues(alpha: 0.5),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
                         ),
                         child: _isLoading
@@ -218,7 +217,7 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
       },
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.75),
+          color: Colors.white.withValues(alpha: 0.75),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(color: Colors.white70, width: 1.2),
         ),

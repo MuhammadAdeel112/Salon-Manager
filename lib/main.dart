@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
-import 'package:salon_manager/Features/Dashboard/admin_provider.dart';
-import 'package:salon_manager/Features/Employee/view/employee_detail_provider.dart';
-import 'Features/Auth/admin_login.dart';
-import 'Features/Dashboard/employee/staff_provider.dart';
-import 'Features/staff_entry/entry_provider.dart';
-import 'Features/staff_entry/staff_entry.dart';
+import 'package:salon_manager/features/dashboard/admin_provider.dart';
+import 'package:salon_manager/features/employee/view/employee_detail_provider.dart';
+import 'features/auth/admin_login.dart';
+import 'features/dashboard/employee/staff_provider.dart';
+import 'features/staff_entry/entry_provider.dart';
+import 'features/staff_entry/staff_entry.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 void main() async {

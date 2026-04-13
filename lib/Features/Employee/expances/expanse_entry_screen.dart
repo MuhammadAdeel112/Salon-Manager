@@ -62,7 +62,7 @@ class EmployeeDetailsScreen extends StatelessWidget {
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(20),
-                boxShadow: [BoxShadow(color: kGoldDark.withOpacity(0.08), blurRadius: 20, offset: const Offset(0, 10))],
+                boxShadow: [BoxShadow(color: kGoldDark.withValues(alpha: 0.08), blurRadius: 20, offset: const Offset(0, 10))],
               ),
               child: Column(
                 children: [
@@ -70,7 +70,7 @@ class EmployeeDetailsScreen extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 10),
                     decoration: BoxDecoration(
-                      color: kGoldLight.withOpacity(0.4), // Light Gold Header
+                      color: kGoldLight.withValues(alpha: 0.4), // Light Gold Header
                       borderRadius: const BorderRadius.only(topLeft: Radius.circular(20), topRight: Radius.circular(20)),
                     ),
                     child: Row(
