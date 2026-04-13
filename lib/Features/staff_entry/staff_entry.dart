@@ -3,6 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'dart:ui';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'packages_catalog.dart';
 import 'receipt_printer.dart';
 import 'services_catalog.dart';
@@ -250,7 +252,7 @@ class _StaffEntryScreenState extends State<StaffEntryScreen>
             ],
           ),
           SizedBox(height: isTablet ? 28 : 16),
-          _buildLiveReceiptCard(provider, isTablet),
+          _buildLiveReceiptCard(provider, isTablet).animate().fade().slideY(begin: -0.1),
         ],
       ),
     );
@@ -260,9 +262,10 @@ class _StaffEntryScreenState extends State<StaffEntryScreen>
     return Container(
       padding: EdgeInsets.all(isTablet ? 20 : 14),
       decoration: BoxDecoration(
-        color: kWhite,
+        color: Colors.white.withOpacity(0.85),
         borderRadius: BorderRadius.circular(28),
-        boxShadow: [BoxShadow(color: kGoldDark.withValues(alpha: 0.12), blurRadius: 20, offset: const Offset(0, 10))],
+        border: Border.all(color: kGoldLight.withOpacity(0.6), width: 1.5),
+        boxShadow: [BoxShadow(color: kGoldDark.withOpacity(0.08), blurRadius: 20, offset: const Offset(0, 10))],
       ),
       child: Column(
         children: [
@@ -531,7 +534,7 @@ class _StaffEntryScreenState extends State<StaffEntryScreen>
                             color: selected ? kGoldDark : kCharcoal)),
                   ]),
                 ),
-              );
+              ).animate().fade(delay: (index * 50).ms).scale(begin: const Offset(0.8, 0.8));
             },
           ),
         );

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 
 import 'admin_provider.dart';
 import '../employee/view/employee_detail_screen.dart';
@@ -261,34 +262,34 @@ class _AdminDashboardState extends State<AdminDashboard> {
         height: isTablet ? 160 : 130,
         padding: EdgeInsets.symmetric(
             vertical: isTablet ? 24 : 16,
-            horizontal: isTablet ? 14 : 10),
+            horizontal: isTablet ? 14 : 12),
         decoration: BoxDecoration(
-          color: bg,
-          borderRadius: BorderRadius.circular(16),
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [bg, bg.withOpacity(0.7)],
+          ),
+          borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-                color: textCol.withValues(alpha: 0.12),
-                blurRadius: 6,
-                offset: const Offset(0, 3))
+                color: textCol.withOpacity(0.15),
+                blurRadius: 10,
+                offset: const Offset(0, 5))
           ],
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Icon(icon, size: isTablet ? 24 : 20, color: textCol),
-              ],
-            ),
+            Icon(icon, size: isTablet ? 28 : 22, color: textCol),
             SizedBox(height: isTablet ? 12 : 6),
             Text(
               title,
               style: TextStyle(
-                color: textCol.withValues(alpha: 0.9),
-                fontSize: isTablet ? 13 : 11,
+                color: textCol.withOpacity(0.8),
+                fontSize: isTablet ? 14 : 12,
                 fontWeight: FontWeight.w600,
+                letterSpacing: 0.5,
               ),
             ),
             SizedBox(height: isTablet ? 8 : 4),
@@ -300,15 +301,14 @@ class _AdminDashboardState extends State<AdminDashboard> {
                     : "PKR ${val.toStringAsFixed(0)}",
                 style: TextStyle(
                   color: textCol,
-                  fontSize: isTablet ? 26 : 18,
+                  fontSize: isTablet ? 26 : 20,
                   fontWeight: FontWeight.bold,
                 ),
               ),
             ),
-            SizedBox(height: isTablet ? 8 : 4),
           ],
         ),
-      ),
+      ).animate().fade(duration: 500.ms).slideY(begin: 0.2, curve: Curves.easeOutQuad),
     );
   }
 
@@ -355,271 +355,155 @@ class _AdminDashboardState extends State<AdminDashboard> {
 
   Widget _buildEmployeeTable(AdminProvider prov, String today, String month,
       double sw, bool isTablet) {
-    return Container(
-      width: double.infinity,
-      decoration: BoxDecoration(
-        color: kWhite,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: kGoldDark.withValues(alpha: 0.10),
-            blurRadius: 14,
-            offset: const Offset(0, 6),
-          ),
-        ],
-      ),
-      child: SingleChildScrollView(
-        scrollDirection: isTablet ? Axis.vertical : Axis.horizontal,
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(16),
-          child: DataTable(
-            showCheckboxColumn: false,
-            columnSpacing: isTablet ? 24 : 16,
-            horizontalMargin: isTablet ? 20 : 12,
-            headingRowHeight: isTablet ? 52 : 44,
-            dataRowMinHeight: isTablet ? 72 : 60,
-            dataRowMaxHeight: isTablet ? 72 : 60,
-            headingRowColor: WidgetStateProperty.all(
-                kGoldLight.withValues(alpha: 0.45)),
-            border: TableBorder(
-              horizontalInside: BorderSide(
-                  color: kGoldLight.withValues(alpha: 0.5), width: 0.8),
-              verticalInside: BorderSide(
-                  color: kGoldLight.withValues(alpha: 0.3), width: 0.8),
-              bottom: BorderSide.none,
-              top: BorderSide.none,
-            ),
-            columns: [
-              DataColumn(
-                label: Text("Staff",
-                    style: TextStyle(
-                        fontWeight: FontWeight.w700,
-                        fontSize: isTablet ? 14 : 12,
-                        color: const Color(0xFF2C2C2C))),
-              ),
-              DataColumn(
-                label: Text("Revenue",
-                    style: TextStyle(
-                        fontWeight: FontWeight.w700,
-                        fontSize: isTablet ? 14 : 12,
-                        color: const Color(0xFF2C2C2C))),
-              ),
-              DataColumn(
-                label: Text("Payout",
-                    style: TextStyle(
-                        fontWeight: FontWeight.w700,
-                        fontSize: isTablet ? 14 : 12,
-                        color: const Color(0xFF2C2C2C))),
-              ),
-              DataColumn(
-                label: Text("Action",
-                    style: TextStyle(
-                        fontWeight: FontWeight.w700,
-                        fontSize: isTablet ? 14 : 12,
-                        color: const Color(0xFF2C2C2C))),
+    if (prov.employees.isEmpty) {
+      return const Center(child: Text("No Staff Found", style: TextStyle(color: Colors.grey)));
+    }
+    return Column(
+      children: prov.employees.map((empDoc) {
+        var empData = empDoc.data() as Map<String, dynamic>;
+        String name = empData['name'] ?? "Unknown";
+        String type = empData['type'] ?? "Salary";
+
+        double fixedAmount =
+        (empData['value'] ?? empData['salary'] ?? 0).toDouble();
+        double commissionRate = (empData['commission'] ?? 0).toDouble();
+
+        double rev = 0;
+        for (var t in prov.transactions) {
+          var tData = t.data() as Map<String, dynamic>;
+          String docDate = (tData['dateOnly'] ?? "").toString().trim();
+          bool include = false;
+
+          if (selectedFilter == "Daily") {
+            include = (docDate == today);
+          } else if (selectedFilter == "Monthly") {
+            include = docDate.startsWith(month);
+          } else if (selectedFilter == "Custom" && customRange != null) {
+            DateTime? dt = _safeParse(docDate);
+            if (dt != null) {
+              include = dt.isAfter(customRange!.start.subtract(const Duration(days: 1))) &&
+                  dt.isBefore(customRange!.end.add(const Duration(days: 1)));
+            }
+          }
+
+          if (tData['staffName'] == name && include && tData['status'] == "Approved") {
+            rev += (tData['totalPrice'] ?? 0).toDouble();
+          }
+        }
+
+        double payout = 0;
+        String subTitle = "";
+        Color payoutColor = kCharcoal;
+
+        if (type == "Both") {
+          payout = fixedAmount + (rev * commissionRate / 100);
+          subTitle = "Fix + ${commissionRate.toStringAsFixed(0)}%";
+          payoutColor = Colors.blue.shade700;
+        } else if (type == "Commission") {
+          payout = (rev * commissionRate / 100);
+          subTitle = "${commissionRate.toStringAsFixed(0)}%";
+          payoutColor = Colors.amber.shade800;
+        } else {
+          payout = fixedAmount;
+          subTitle = "Fixed";
+          payoutColor = Colors.green.shade700;
+        }
+
+        return Container(
+          margin: const EdgeInsets.only(bottom: 12),
+          padding: EdgeInsets.all(isTablet ? 20 : 16),
+          decoration: BoxDecoration(
+            color: kWhite,
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: kGoldDark.withOpacity(0.06),
+                blurRadius: 15,
+                offset: const Offset(0, 5),
               ),
             ],
-            rows: prov.employees.map((empDoc) {
-              var empData = empDoc.data() as Map<String, dynamic>;
-              String name = empData['name'] ?? "Unknown";
-              String type = empData['type'] ?? "Salary";
-
-              double fixedAmount =
-              (empData['value'] ?? empData['salary'] ?? 0).toDouble();
-              double commissionRate =
-              (empData['commission'] ?? 0).toDouble();
-
-              double rev = 0;
-              for (var t in prov.transactions) {
-                var tData = t.data() as Map<String, dynamic>;
-                String docDate = (tData['dateOnly'] ?? "").toString().trim();
-                bool include = false;
-
-                if (selectedFilter == "Daily") {
-                  include = (docDate == today);
-                } else if (selectedFilter == "Monthly") {
-                  include = docDate.startsWith(month);
-                } else if (selectedFilter == "Custom" &&
-                    customRange != null) {
-                  DateTime? dt = _safeParse(docDate);
-                  if (dt != null) {
-                    include = dt.isAfter(customRange!.start
-                        .subtract(const Duration(days: 1))) &&
-                        dt.isBefore(
-                            customRange!.end.add(const Duration(days: 1)));
-                  }
-                }
-
-                if (tData['staffName'] == name &&
-                    include &&
-                    tData['status'] == "Approved") {
-                  rev += (tData['totalPrice'] ?? 0).toDouble();
-                }
-              }
-
-              double payout = 0;
-              String subTitle = "";
-              Color payoutColor = kCharcoal;
-
-              if (type == "Both") {
-                payout = fixedAmount + (rev * commissionRate / 100);
-                subTitle = "Fix + ${commissionRate.toStringAsFixed(0)}%";
-                payoutColor = Colors.blue.shade700;
-              } else if (type == "Commission") {
-                payout = (rev * commissionRate / 100);
-                subTitle = "${commissionRate.toStringAsFixed(0)}%";
-                payoutColor = Colors.amber.shade800;
-              } else {
-                payout = fixedAmount;
-                subTitle = "Fixed";
-                payoutColor = Colors.green.shade700;
-              }
-
-              double progress = (rev / 50000).clamp(0.0, 1.0);
-
-              return DataRow(
-                cells: [
-                  DataCell(
-                    Row(
-                      children: [
-                        CircleAvatar(
-                          radius: isTablet ? 20 : 16,
-                          backgroundColor: kGoldPrimary.withValues(alpha: 0.25),
-                          child: Text(
-                            name.isNotEmpty ? name[0].toUpperCase() : "?",
-                            style: TextStyle(
-                              color: kGoldDark,
-                              fontWeight: FontWeight.bold,
-                              fontSize: isTablet ? 16 : 13,
-                            ),
-                          ),
-                        ),
-                        SizedBox(width: isTablet ? 16 : 8),
-                        Expanded(
-                          child: Text(
-                            name,
-                            style: TextStyle(
-                              fontSize: isTablet ? 14 : 12,
-                              fontWeight: FontWeight.w600,
-                              color: const Color(0xFF2C2C2C),
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ],
-                    ),
+          ),
+          child: Row(
+            children: [
+              CircleAvatar(
+                radius: isTablet ? 26 : 22,
+                backgroundColor: kGoldPrimary.withOpacity(0.15),
+                child: Text(
+                  name.isNotEmpty ? name[0].toUpperCase() : "?",
+                  style: TextStyle(
+                    color: kGoldDark,
+                    fontWeight: FontWeight.bold,
+                    fontSize: isTablet ? 20 : 18,
                   ),
-                  DataCell(
-                    Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          rev.toStringAsFixed(0),
-                          style: TextStyle(
-                            fontSize: isTablet ? 14 : 12,
-                            fontWeight: FontWeight.bold,
-                            color: const Color(0xFF2C2C2C),
-                          ),
-                        ),
-                        const SizedBox(height: 6),
-                        Container(
-                          width: isTablet ? 100 : 70,
-                          height: 8,
-                          decoration: BoxDecoration(
-                            color: kGoldLight.withValues(alpha: 0.6),
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: FractionallySizedBox(
-                            widthFactor: progress,
-                            child: Container(
-                              decoration: BoxDecoration(
-                                color: kGoldPrimary,
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  DataCell(
-                    Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Icon(Icons.payments_rounded,
-                                size: isTablet ? 16 : 14,
-                                color: payoutColor),
-                            SizedBox(width: isTablet ? 8 : 4),
-                            Text(
-                              payout.toStringAsFixed(0),
-                              style: TextStyle(
-                                fontSize: isTablet ? 14 : 12,
-                                fontWeight: FontWeight.bold,
-                                color: payoutColor,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          subTitle,
-                          style: TextStyle(
-                            fontSize: isTablet ? 11 : 10,
-                            color: Colors.grey.shade700,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  DataCell(
-                    GestureDetector(
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => EmployeeDetailsScreen(
-                              staffName: name,
-                              dateFilter: selectedFilter == "Daily"
-                                  ? today
-                                  : month,
-                              filterType: selectedFilter,
-                              customRange: customRange,
-                            ),
-                          ),
-                        );
-                      },
-                      child: Container(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: isTablet ? 16 : 10,
-                          vertical: isTablet ? 10 : 7,
-                        ),
-                        decoration: BoxDecoration(
-                          color: kGoldPrimary.withValues(alpha: 0.18),
-                          borderRadius: BorderRadius.circular(12),
-                          border:
-                          Border.all(color: kGoldPrimary, width: 1.3),
-                        ),
-                        child: Text(
-                          "View Details",
-                          style: TextStyle(
-                            color: const Color(0xFFC69C34),
-                            fontSize: isTablet ? 13 : 11,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      name,
+                      style: TextStyle(
+                        fontSize: isTablet ? 16 : 15,
+                        fontWeight: FontWeight.bold,
+                        color: const Color(0xFF2C2C2C),
                       ),
                     ),
+                    const SizedBox(height: 6),
+                    Row(
+                      children: [
+                        Icon(Icons.attach_money, size: isTablet ? 16 : 14, color: Colors.grey),
+                        Text(
+                          "Rev: ${rev.toStringAsFixed(0)}",
+                          style: TextStyle(fontSize: isTablet ? 13 : 12, color: Colors.grey),
+                        ),
+                        const SizedBox(width: 10),
+                        Icon(Icons.payments_rounded, size: isTablet ? 16 : 14, color: payoutColor),
+                        Text(
+                          " PKR ${payout.toStringAsFixed(0)}",
+                          style: TextStyle(fontSize: isTablet ? 13 : 12, fontWeight: FontWeight.bold, color: payoutColor),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => EmployeeDetailsScreen(
+                        staffName: name,
+                        dateFilter: selectedFilter == "Daily" ? today : month,
+                        filterType: selectedFilter,
+                        customRange: customRange,
+                      ),
+                    ),
+                  );
+                },
+                child: Container(
+                  padding: EdgeInsets.symmetric(horizontal: isTablet ? 18 : 14, vertical: isTablet ? 10 : 8),
+                  decoration: BoxDecoration(
+                    color: kGoldPrimary.withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: kGoldPrimary.withOpacity(0.3)),
                   ),
-                ],
-              );
-            }).toList(),
+                  child: Text(
+                    "View",
+                    style: TextStyle(
+                      color: const Color(0xFFC69C34),
+                      fontSize: isTablet ? 14 : 13,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
-        ),
-      ),
+        ).animate().fade().slideX(begin: 0.1, curve: Curves.easeOut);
+      }).toList(),
     );
   }
 

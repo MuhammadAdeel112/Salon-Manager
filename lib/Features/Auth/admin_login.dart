@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import '../dashboard/admin_dashboard.dart';
 import 'forget_password.dart';
 
@@ -191,7 +192,7 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
                     ),
                   ],
                 ),
-              ),
+              ).animate().fade(duration: 800.ms).slideY(begin: 0.1, curve: Curves.easeOutQuad),
             ),
           ),
         ),
